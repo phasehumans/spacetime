@@ -1,0 +1,12 @@
+id: "task-001"
+name: "Fix Nginx Configuration"
+description: "The agent needs to find and fix a syntax error in the nginx config and restart the service."
+base_image: "ubuntu:22.04"
+setup_script: |
+  apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nginx curl
+  echo "server { listen 80; root /var/www/html; index index.html; error_page 404 /404.html; " > /etc/nginx/sites-available/default
+prompt: "The Nginx server is failing to start due to a syntax error. Please identify the issue in the default site configuration, fix it, and ensure the service can start successfully."
+validation_script: |
+  nginx -t
+  service nginx start
+  curl -s http://localhost | grep "Welcome to nginx!"

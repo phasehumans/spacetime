@@ -1,12 +1,40 @@
 {
   "name": "spacetime",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "evaluate": "tsx src/cli.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phasehumans/spacetime.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/phasehumans/spacetime/issues"
+  },
+  "homepage": "https://github.com/phasehumans/spacetime#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@types/dockerode": "^4.0.1",
+    "@types/express": "^5.0.6",
+    "@types/figlet": "^1.7.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^26.1.0",
+    "boxen": "^5.1.2",
+    "chalk": "^4.1.2",
+    "dockerode": "^5.0.1",
+    "express": "^5.2.1",
+    "figlet": "^1.11.0",
+    "js-yaml": "^5.2.1",
+    "openai": "^6.45.0",
+    "ora": "^5.4.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
   }
 }

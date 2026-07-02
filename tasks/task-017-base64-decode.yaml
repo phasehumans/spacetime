@@ -1,0 +1,9 @@
+id: "task-017"
+name: "Base64 Decode"
+description: "Decode a base64 string."
+base_image: "alpine:latest"
+setup_script: |
+  echo "aGVsbG8gd29ybGQ=" > /tmp/encoded.txt
+prompt: "Decode the base64 string in /tmp/encoded.txt and save the decoded text to /tmp/decoded.txt."
+validation_script: |
+  grep -q "hello world" /tmp/decoded.txt\n

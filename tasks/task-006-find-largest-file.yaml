@@ -1,0 +1,15 @@
+id: "task-006"
+name: "Find Largest File"
+description: "Find the largest file in a directory tree and delete it."
+base_image: "ubuntu:22.04"
+setup_script: |
+  mkdir -p /data/nested/dirs
+dd if=/dev/urandom of=/data/file1.bin bs=1M count=1
+dd if=/dev/urandom of=/data/nested/file2.bin bs=1M count=2
+dd if=/dev/urandom of=/data/nested/dirs/file3.bin bs=1M count=5
+
+prompt: "Find the largest file in the /data directory and delete it to free up space."
+validation_script: |
+  ! test -f /data/nested/dirs/file3.bin
+test -f /data/file1.bin
+test -f /data/nested/file2.bin\n

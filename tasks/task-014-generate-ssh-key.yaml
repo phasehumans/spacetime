@@ -1,0 +1,10 @@
+id: "task-014"
+name: "Generate SSH Key"
+description: "Generate an SSH keypair."
+base_image: "ubuntu:22.04"
+setup_script: |
+  apt-get update && apt-get install -y openssh-client
+prompt: "Generate an RSA SSH keypair at /root/.ssh/id_rsa with no passphrase."
+validation_script: |
+  test -f /root/.ssh/id_rsa
+test -f /root/.ssh/id_rsa.pub\n

@@ -1,0 +1,9 @@
+id: "task-009"
+name: "Create User and Group"
+description: "Create a user and assign to a group."
+base_image: "ubuntu:22.04"
+setup_script: |
+  groupadd developers
+prompt: "Create a new user named 'alice' and add her to the 'developers' group."
+validation_script: |
+  id alice | grep -q "developers"\n
