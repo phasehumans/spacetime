@@ -7,7 +7,6 @@ import yaml from 'js-yaml';
 import { BenchmarkTask } from './types';
 import { TaskRunner } from './taskRunner';
 import chalk from 'chalk';
-import boxen from 'boxen';
 import ora from 'ora';
 import figlet from 'figlet';
 import { select } from '@inquirer/prompts';
@@ -69,6 +68,17 @@ async function runTask(taskFile: string, isBatch: boolean = false): Promise<bool
   const startTime = Date.now();
   let passed = false;
   
+  let isTearingDown = false;
+  const sigintHandler = async () => {
+    if (isTearingDown) return;
+    isTearingDown = true;
+    console.log(chalk.grey('\n\n[Interrupted] Force closing and tearing down Docker environment...'));
+    await runner.teardown();
+    console.log(chalk.grey('Environment destroyed.'));
+    process.exit(130);
+  };
+  process.on('SIGINT', sigintHandler);
+  
   try {
     await runner.setup();
     initSpinner.succeed(chalk.dim(`Environment initialized: `) + chalk.white(task.id));
@@ -92,13 +102,8 @@ When you are completely finished with the task and ready for evaluation, output 
       openaiMessages.push({ role: 'user', content: runner.getPrompt() });
     }
 
-    console.log('\n' + boxen(chalk.white(runner.getPrompt()), { 
-      padding: 1, 
-      title: chalk.grey(' Target Objective '), 
-      titleAlignment: 'center',
-      borderStyle: 'single', 
-      borderColor: 'gray'
-    }));
+    console.log(chalk.grey('\n• Target Objective:'));
+    console.log(chalk.white(`  ${runner.getPrompt()}`));
 
     let turns = 0;
     const MAX_TURNS = 15;
@@ -144,12 +149,7 @@ When you are completely finished with the task and ready for evaluation, output 
         throw err;
       }
 
-      console.log(boxen(chalk.grey(content), { 
-        padding: 1, 
-        title: chalk.grey(` Agent Thought (Turn ${turns}) `),
-        borderStyle: 'single',
-        borderColor: 'gray'
-      }));
+      console.log(chalk.grey(`\n• Agent Thought (Turn ${turns}):\n  `) + chalk.grey(content.split('\n').join('\n  ')));
 
       if (content.includes('<submit>')) {
         console.log(chalk.white('\n[Notice] Agent initiated evaluation sequence...'));
@@ -167,17 +167,10 @@ When you are completely finished with the task and ready for evaluation, output 
         const result = await runner.runAgentCommand(command);
         execSpinner.stop();
         
-        let outText = '';
-        if (result.stdout) outText += `${chalk.dim('stdout:')}\n${chalk.white(result.stdout)}\n`;
-        if (result.stderr) outText += `${chalk.dim('stderr:')}\n${chalk.grey(result.stderr)}\n`;
-        outText += `\n${chalk.dim('exit code:')} ${chalk.white(result.exitCode)}`;
-                          
-        console.log(boxen(outText, { 
-          padding: 1, 
-          title: chalk.grey(` > ${command} `), 
-          borderStyle: 'single', 
-          borderColor: 'gray'
-        }));
+        console.log(chalk.grey(`\n• Executed: `) + chalk.white(command));
+        if (result.stdout.trim()) console.log(chalk.dim(`  stdout:\n  `) + chalk.white(result.stdout.trim().split('\n').join('\n  ')));
+        if (result.stderr.trim()) console.log(chalk.dim(`  stderr:\n  `) + chalk.grey(result.stderr.trim().split('\n').join('\n  ')));
+        console.log(chalk.dim(`  exit code: `) + chalk.white(result.exitCode));
         
         userReply = `Command Result:\nExit Code: ${result.exitCode}\nStdout:\n${result.stdout}\nStderr:\n${result.stderr}`;
       } else {
@@ -202,30 +195,22 @@ When you are completely finished with the task and ready for evaluation, output 
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     
-    const summaryHeader = chalk.white(' SPACETIME LOG ');
-    const summaryContent = 
-      `${chalk.dim('Task:')}        ${chalk.white(task.name)}\n` +
-      `${chalk.dim('Provider:')}    ${chalk.white(providerName)}\n` +
-      `${chalk.dim('Turns:')}       ${chalk.white(turns)}\n` +
-      `${chalk.dim('Duration:')}    ${chalk.white(duration + 's')}\n\n` +
-      (passed 
-        ? chalk.white('   [ PASS ]') 
-        : chalk.grey('   [ FAIL ]'));
-        
-    console.log('\n' + boxen(summaryContent, { 
-      padding: { top: 1, bottom: 1, left: 3, right: 3 }, 
-      title: summaryHeader,
-      titleAlignment: 'center',
-      borderStyle: 'single', 
-      borderColor: 'gray'
-    }));
+    console.log(chalk.white('\n• SPACETIME LOG •'));
+    console.log(chalk.dim('  Task:     ') + chalk.white(task.name));
+    console.log(chalk.dim('  Provider: ') + chalk.white(providerName));
+    console.log(chalk.dim('  Turns:    ') + chalk.white(turns));
+    console.log(chalk.dim('  Duration: ') + chalk.white(duration + 's'));
+    console.log(chalk.dim('  Result:   ') + (passed ? chalk.white('[ PASS ]') : chalk.grey('[ FAIL ]')));
 
   } catch (err: any) {
     console.error(chalk.grey('\n[Critical Failure]'), chalk.dim(err.message));
   } finally {
-    const teardownSpinner = ora({ text: chalk.dim('Tearing down environment...'), color: 'gray' }).start();
-    await runner.teardown();
-    teardownSpinner.succeed(chalk.dim('Environment destroyed.'));
+    process.off('SIGINT', sigintHandler);
+    if (!isTearingDown) {
+      const teardownSpinner = ora({ text: chalk.dim('Tearing down environment...'), color: 'gray' }).start();
+      await runner.teardown();
+      teardownSpinner.succeed(chalk.dim('Environment destroyed.'));
+    }
   }
   
   return passed;
