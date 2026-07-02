@@ -4,9 +4,9 @@ description: "Create a symbolic link."
 base_image: "alpine:latest"
 setup_script: |
   mkdir -p /opt/app/v1.0
-echo "v1.0" > /opt/app/v1.0/version
+  echo "v1.0" > /opt/app/v1.0/version
 
 prompt: "Create a symbolic link at /opt/app/current that points to /opt/app/v1.0."
 validation_script: |
   test -L /opt/app/current
-readlink /opt/app/current | grep -q "v1.0"\n
+  readlink /opt/app/current | grep -q "v1.0"\n

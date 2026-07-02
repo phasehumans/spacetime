@@ -4,24 +4,24 @@ description: "Resolve a simulated git merge conflict."
 base_image: "alpine:latest"
 setup_script: |
   apk add --no-cache git
-git init /repo
-cd /repo
-git config user.email "test@example.com"
-git config user.name "Test User"
-echo "line 1" > file.txt
-git add file.txt
-git commit -m "initial"
-git checkout -b feature
-echo "line 1 modified by feature" > file.txt
-git commit -am "feature update"
-git checkout master
-echo "line 1 modified by master" > file.txt
-git commit -am "master update"
-git merge feature || true
+  git init /repo
+  cd /repo
+  git config user.email "test@example.com"
+  git config user.name "Test User"
+  echo "line 1" > file.txt
+  git add file.txt
+  git commit -m "initial"
+  git checkout -b feature
+  echo "line 1 modified by feature" > file.txt
+  git commit -am "feature update"
+  git checkout master
+  echo "line 1 modified by master" > file.txt
+  git commit -am "master update"
+  git merge feature || true
 
 prompt: "There is a git repository at /repo with a merge conflict in file.txt. Resolve the conflict by keeping the 'master' version, and complete the merge commit."
 validation_script: |
   cd /repo
-grep -q "line 1 modified by master" file.txt
-! grep -q "<<<<<<<" file.txt
-git status | grep "nothing to commit"\n
+  grep -q "line 1 modified by master" file.txt
+  ! grep -q "<<<<<<<" file.txt
+  git status | grep "nothing to commit"\n

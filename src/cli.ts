@@ -2,6 +2,7 @@ import 'dotenv/config';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
+import path from 'path';
 import yaml from 'js-yaml';
 import { BenchmarkTask } from './types';
 import { TaskRunner } from './taskRunner';
@@ -9,21 +10,37 @@ import chalk from 'chalk';
 import boxen from 'boxen';
 import ora from 'ora';
 import figlet from 'figlet';
+import { select } from '@inquirer/prompts';
 
-async function runCli() {
-  console.clear();
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-  // Generate Spacetime logo
-  const logo = figlet.textSync('SPACETIME', { font: 'Standard' });
-  console.log(chalk.grey(logo));
-  console.log(chalk.grey('      Terminal Benchmark Runner\n'));
-
-  const taskFile = process.argv[2];
-  if (!taskFile) {
-    console.error(chalk.grey('[ERROR] Please provide a task file. Usage: npm run evaluate <path-to-task-file>'));
-    process.exit(1);
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (attempt >= maxRetries) throw err;
+      if (err.message && (err.message.includes('429') || err.status === 429)) {
+        attempt++;
+        
+        let waitTime = attempt * 15000;
+        // Parse the required retry time from Gemini error if it exists
+        const match = err.message.match(/retry in ([\d\.]+)s/);
+        if (match && match[1]) {
+          waitTime = Math.ceil(parseFloat(match[1])) * 1000 + 2000; // Exact wait + 2s buffer
+        }
+        
+        console.log(chalk.yellow(`\n[Warning] Rate limit hit. Waiting ${waitTime/1000}s before retrying (Attempt ${attempt}/${maxRetries})...`));
+        await delay(waitTime);
+      } else {
+        throw err;
+      }
+    }
   }
+}
 
+async function runTask(taskFile: string, isBatch: boolean = false): Promise<boolean> {
   const useGemini = !!process.env.GEMINI_API_KEY;
   const useOpenAI = !!process.env.OPENAI_API_KEY;
 
@@ -33,13 +50,16 @@ async function runCli() {
   }
 
   const providerName = useGemini ? 'Gemini 3.5 Flash' : 'OpenAI GPT-4o';
-  console.log(chalk.dim(`[Provider] `) + chalk.white(providerName));
+  
+  if (!isBatch) {
+    console.log(chalk.dim(`[Provider] `) + chalk.white(providerName));
+  }
 
   const fileContents = fs.readFileSync(taskFile, 'utf8');
   const task = yaml.load(fileContents) as BenchmarkTask;
   const runner = new TaskRunner(task);
 
-  console.log(chalk.dim(`[Task]     `) + chalk.white(task.name));
+  console.log(chalk.dim(`\n[Task]     `) + chalk.white(task.name));
   
   const initSpinner = ora({
     text: chalk.dim('Initializing environment...'),
@@ -47,6 +67,7 @@ async function runCli() {
   }).start();
   
   const startTime = Date.now();
+  let passed = false;
   
   try {
     await runner.setup();
@@ -106,14 +127,14 @@ When you are completely finished with the task and ready for evaluation, output 
         if (useGemini) {
           const chat = geminiModel.startChat({ history: geminiMessages.slice(0, -1) });
           const lastMsg = geminiMessages[geminiMessages.length - 1];
-          const response = await chat.sendMessage(lastMsg.parts[0].text);
+          const response = await withRetry(() => chat.sendMessage(lastMsg.parts[0].text));
           content = response.response.text() || '';
           geminiMessages.push({ role: 'model', parts: [{ text: content }] });
         } else {
-          const response = await openaiClient!.chat.completions.create({
+          const response = await withRetry(() => openaiClient!.chat.completions.create({
             model: 'gpt-4o',
             messages: openaiMessages,
-          });
+          }));
           content = response.choices[0].message.content || '';
           openaiMessages.push({ role: 'assistant', content });
         }
@@ -176,7 +197,7 @@ When you are completely finished with the task and ready for evaluation, output 
     }
 
     const evalSpinner = ora({ text: chalk.dim('Evaluating final state...'), color: 'gray' }).start();
-    const passed = await runner.evaluate();
+    passed = await runner.evaluate();
     evalSpinner.stop();
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -206,6 +227,72 @@ When you are completely finished with the task and ready for evaluation, output 
     await runner.teardown();
     teardownSpinner.succeed(chalk.dim('Environment destroyed.'));
   }
+  
+  return passed;
 }
 
-runCli();
+async function main() {
+  // Generate Spacetime logo
+  const logo = figlet.textSync('SPACETIME', { font: 'Standard' });
+  console.log(chalk.grey(logo));
+  console.log(chalk.grey('A benchmark for evaluating AI agents on interactive terminal tasks.\n'));
+
+  const taskFile = process.argv[2];
+  if (taskFile) {
+    await runTask(taskFile);
+    return;
+  }
+
+  // Interactive selection
+  const tasksDir = path.join(__dirname, '../tasks');
+  const files = fs.readdirSync(tasksDir).filter(f => f.endsWith('.yaml')).sort();
+  
+  const choices = files.map(f => ({ name: f, value: path.join(tasksDir, f) }));
+  choices.push({ name: 'Run All Tests', value: 'ALL' });
+
+  let selectedTask;
+  try {
+    selectedTask = await select({
+      message: 'Select a task to run:',
+      choices: choices,
+      theme: {
+        prefix: '>',
+        style: {
+          highlight: (text: string) => chalk.bold.white(text),
+          answer: (text: string) => chalk.grey(text),
+          message: (text: string) => chalk.grey(text)
+        }
+      }
+    });
+  } catch (err: any) {
+    if (err.name === 'ExitPromptError') {
+      console.log(chalk.grey('\nExiting...'));
+      process.exit(0);
+    }
+    throw err;
+  }
+
+  if (!selectedTask) {
+    console.log(chalk.grey('Exiting...'));
+    return;
+  }
+
+  if (selectedTask === 'ALL') {
+    console.log(chalk.white(`\n[Info] Running all ${files.length} tests sequentially...`));
+    let passedCount = 0;
+    
+    for (const file of files) {
+      console.log(chalk.grey(`\n-----------------------------------------------------`));
+      const passed = await runTask(path.join(tasksDir, file), true);
+      if (passed) passedCount++;
+    }
+    
+    console.log(chalk.white('\n[Final Results]'));
+    console.log(chalk.grey(`Passed: ${passedCount}/${files.length}`));
+    
+  } else {
+    await runTask(selectedTask);
+  }
+}
+
+main();

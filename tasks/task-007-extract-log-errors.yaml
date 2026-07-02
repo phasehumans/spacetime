@@ -4,14 +4,14 @@ description: "Extract lines with ERROR from a log file."
 base_image: "ubuntu:22.04"
 setup_script: |
   echo -e "INFO: Starting up
-ERROR: Connection failed
-INFO: Retrying
-ERROR: Timeout
-WARN: High memory" > /var/log/app.log
+  ERROR: Connection failed
+  INFO: Retrying
+  ERROR: Timeout
+  WARN: High memory" > /var/log/app.log
 prompt: "Extract all lines containing the word 'ERROR' from /var/log/app.log and save them to /tmp/errors.log."
 validation_script: |
   test -f /tmp/errors.log
-wc -l < /tmp/errors.log | grep -q "2"
-grep -q "Connection failed" /tmp/errors.log
-grep -q "Timeout" /tmp/errors.log
-! grep -q "INFO" /tmp/errors.log\n
+  wc -l < /tmp/errors.log | grep -q "2"
+  grep -q "Connection failed" /tmp/errors.log
+  grep -q "Timeout" /tmp/errors.log
+  ! grep -q "INFO" /tmp/errors.log\n

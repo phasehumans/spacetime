@@ -4,12 +4,12 @@ description: "Use sed to replace a string across multiple files."
 base_image: "ubuntu:22.04"
 setup_script: |
   mkdir /configs
-echo "db_host=localhost" > /configs/db1.conf
-echo "db_host=localhost" > /configs/db2.conf
-echo "other=localhost" > /configs/other.conf
+  echo "db_host=localhost" > /configs/db1.conf
+  echo "db_host=localhost" > /configs/db2.conf
+  echo "other=localhost" > /configs/other.conf
 
 prompt: "Change 'db_host=localhost' to 'db_host=db.internal' in all .conf files in the /configs directory."
 validation_script: |
   grep -q "db_host=db.internal" /configs/db1.conf
-grep -q "db_host=db.internal" /configs/db2.conf
-grep -q "other=localhost" /configs/other.conf\n
+  grep -q "db_host=db.internal" /configs/db2.conf
+  grep -q "other=localhost" /configs/other.conf\n
