@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
@@ -7,14 +8,19 @@ import { TaskRunner } from './taskRunner';
 import chalk from 'chalk';
 import boxen from 'boxen';
 import ora from 'ora';
+import figlet from 'figlet';
 
 async function runCli() {
   console.clear();
-  console.log(chalk.bold.blue('\n🚀 Spacetime Agent Benchmark Runner\n'));
+
+  // Generate Spacetime logo
+  const logo = figlet.textSync('SPACETIME', { font: 'Standard' });
+  console.log(chalk.grey(logo));
+  console.log(chalk.grey('      Terminal Benchmark Runner\n'));
 
   const taskFile = process.argv[2];
   if (!taskFile) {
-    console.error(chalk.red('✖ Please provide a task file. Usage: npm run evaluate <path-to-task-file>'));
+    console.error(chalk.grey('[ERROR] Please provide a task file. Usage: npm run evaluate <path-to-task-file>'));
     process.exit(1);
   }
 
@@ -22,22 +28,29 @@ async function runCli() {
   const useOpenAI = !!process.env.OPENAI_API_KEY;
 
   if (!useGemini && !useOpenAI) {
-    console.error(chalk.red('✖ Please set either GEMINI_API_KEY or OPENAI_API_KEY environment variable.'));
+    console.error(chalk.grey('[ERROR] Please set either GEMINI_API_KEY or OPENAI_API_KEY environment variable.'));
     process.exit(1);
   }
 
   const providerName = useGemini ? 'Gemini 3.5 Flash' : 'OpenAI GPT-4o';
-  console.log(chalk.gray(`🤖 Model Provider: ${chalk.white.bold(providerName)}\n`));
+  console.log(chalk.dim(`[Provider] `) + chalk.white(providerName));
 
   const fileContents = fs.readFileSync(taskFile, 'utf8');
   const task = yaml.load(fileContents) as BenchmarkTask;
   const runner = new TaskRunner(task);
 
-  const initSpinner = ora(`Initializing Task: ${chalk.yellow.bold(task.name)}`).start();
+  console.log(chalk.dim(`[Task]     `) + chalk.white(task.name));
+  
+  const initSpinner = ora({
+    text: chalk.dim('Initializing environment...'),
+    color: 'gray'
+  }).start();
+  
+  const startTime = Date.now();
   
   try {
     await runner.setup();
-    initSpinner.succeed(`Task environment initialized for ${chalk.yellow(task.id)}`);
+    initSpinner.succeed(chalk.dim(`Environment initialized: `) + chalk.white(task.id));
     
     const systemPrompt = `You are an AI agent evaluating a software engineering task in a remote terminal. 
 You can execute commands by wrapping them in an <execute> block. 
@@ -58,7 +71,13 @@ When you are completely finished with the task and ready for evaluation, output 
       openaiMessages.push({ role: 'user', content: runner.getPrompt() });
     }
 
-    console.log(boxen(chalk.cyan(runner.getPrompt()), { padding: 1, title: 'Task Prompt', borderStyle: 'round', borderColor: 'cyan' }));
+    console.log('\n' + boxen(chalk.white(runner.getPrompt()), { 
+      padding: 1, 
+      title: chalk.grey(' Target Objective '), 
+      titleAlignment: 'center',
+      borderStyle: 'single', 
+      borderColor: 'gray'
+    }));
 
     let turns = 0;
     const MAX_TURNS = 15;
@@ -77,7 +96,10 @@ When you are completely finished with the task and ready for evaluation, output 
     while (turns < MAX_TURNS) {
       turns++;
       
-      const thinkSpinner = ora(chalk.magenta(`Turn ${turns}/${MAX_TURNS}: Agent is thinking...`)).start();
+      const thinkSpinner = ora({
+        text: chalk.dim(`[Turn ${turns}/${MAX_TURNS}] Agent is thinking...`),
+        color: 'gray'
+      }).start();
       let content = '';
 
       try {
@@ -97,15 +119,19 @@ When you are completely finished with the task and ready for evaluation, output 
         }
         thinkSpinner.stop();
       } catch (err) {
-        thinkSpinner.fail(chalk.red('Agent failed to respond.'));
+        thinkSpinner.fail(chalk.grey('[Error] Agent connection failed.'));
         throw err;
       }
 
-      console.log(chalk.magenta(`\n[Agent Response - Turn ${turns}]`));
-      console.log(chalk.white(content));
+      console.log(boxen(chalk.grey(content), { 
+        padding: 1, 
+        title: chalk.grey(` Agent Thought (Turn ${turns}) `),
+        borderStyle: 'single',
+        borderColor: 'gray'
+      }));
 
       if (content.includes('<submit>')) {
-        console.log(chalk.green.bold('\n✔ Agent has submitted the task for evaluation.'));
+        console.log(chalk.white('\n[Notice] Agent initiated evaluation sequence...'));
         break;
       }
 
@@ -113,21 +139,28 @@ When you are completely finished with the task and ready for evaluation, output 
       let userReply = '';
       if (executeMatch && executeMatch[1]) {
         const command = executeMatch[1].trim();
-        const execSpinner = ora(chalk.cyan(`Executing: ${command}`)).start();
+        const execSpinner = ora({
+          text: chalk.dim(`Executing: `) + chalk.grey(command),
+          color: 'gray'
+        }).start();
         const result = await runner.runAgentCommand(command);
-        execSpinner.succeed(chalk.cyan(`Executed: ${command}`));
+        execSpinner.stop();
         
-        let outputColor = result.exitCode === 0 ? chalk.green : chalk.red;
-        
-        const outputBox = `Exit Code: ${outputColor(result.exitCode.toString())}\n` +
-                          `${chalk.gray('--- Stdout ---')}\n${result.stdout || chalk.gray('(empty)')}\n` +
-                          `${chalk.gray('--- Stderr ---')}\n${result.stderr || chalk.gray('(empty)')}`;
+        let outText = '';
+        if (result.stdout) outText += `${chalk.dim('stdout:')}\n${chalk.white(result.stdout)}\n`;
+        if (result.stderr) outText += `${chalk.dim('stderr:')}\n${chalk.grey(result.stderr)}\n`;
+        outText += `\n${chalk.dim('exit code:')} ${chalk.white(result.exitCode)}`;
                           
-        console.log(boxen(outputBox, { padding: 1, borderColor: result.exitCode === 0 ? 'green' : 'red', dimBorder: true }));
+        console.log(boxen(outText, { 
+          padding: 1, 
+          title: chalk.grey(` > ${command} `), 
+          borderStyle: 'single', 
+          borderColor: 'gray'
+        }));
         
         userReply = `Command Result:\nExit Code: ${result.exitCode}\nStdout:\n${result.stdout}\nStderr:\n${result.stderr}`;
       } else {
-        console.log(chalk.yellow('⚠ No <execute> or <submit> block found. Reminding agent...'));
+        console.log(chalk.dim('[Warning] No command provided. Nudging agent...'));
         userReply = 'You must provide an <execute>...</execute> block to run a command, or <submit></submit> to finish.';
       }
 
@@ -139,26 +172,39 @@ When you are completely finished with the task and ready for evaluation, output 
     }
 
     if (turns >= MAX_TURNS) {
-      console.log(chalk.red.bold(`\n⚠ Reached maximum turns (${MAX_TURNS}). Forcing evaluation.`));
+      console.log(chalk.grey(`\n[Warning] Reached maximum turns (${MAX_TURNS}). Forcing evaluation.`));
     }
 
-    const evalSpinner = ora('Evaluating task...').start();
+    const evalSpinner = ora({ text: chalk.dim('Evaluating final state...'), color: 'gray' }).start();
     const passed = await runner.evaluate();
+    evalSpinner.stop();
     
-    if (passed) {
-      evalSpinner.succeed(chalk.green('Evaluation Complete'));
-      console.log('\n' + boxen(chalk.green.bold('🎉 FINAL SCORE: PASS ✅'), { padding: 1, borderStyle: 'double', borderColor: 'green' }));
-    } else {
-      evalSpinner.fail(chalk.red('Evaluation Complete'));
-      console.log('\n' + boxen(chalk.red.bold('💥 FINAL SCORE: FAIL ❌'), { padding: 1, borderStyle: 'double', borderColor: 'red' }));
-    }
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    
+    const summaryHeader = chalk.white(' SPACETIME LOG ');
+    const summaryContent = 
+      `${chalk.dim('Task:')}        ${chalk.white(task.name)}\n` +
+      `${chalk.dim('Provider:')}    ${chalk.white(providerName)}\n` +
+      `${chalk.dim('Turns:')}       ${chalk.white(turns)}\n` +
+      `${chalk.dim('Duration:')}    ${chalk.white(duration + 's')}\n\n` +
+      (passed 
+        ? chalk.white('   [ PASS ]') 
+        : chalk.grey('   [ FAIL ]'));
+        
+    console.log('\n' + boxen(summaryContent, { 
+      padding: { top: 1, bottom: 1, left: 3, right: 3 }, 
+      title: summaryHeader,
+      titleAlignment: 'center',
+      borderStyle: 'single', 
+      borderColor: 'gray'
+    }));
 
   } catch (err: any) {
-    console.error(chalk.red('\n✖ Error during execution:'), err.message);
+    console.error(chalk.grey('\n[Critical Failure]'), chalk.dim(err.message));
   } finally {
-    const teardownSpinner = ora('Tearing down environment...').start();
+    const teardownSpinner = ora({ text: chalk.dim('Tearing down environment...'), color: 'gray' }).start();
     await runner.teardown();
-    teardownSpinner.succeed('Environment destroyed.');
+    teardownSpinner.succeed(chalk.dim('Environment destroyed.'));
   }
 }
 
