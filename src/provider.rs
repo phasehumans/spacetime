@@ -72,6 +72,10 @@ pub struct OpenAiProvider {
 #[async_trait]
 impl LlmProvider for OpenAiProvider {
     async fn chat(&self, messages: &[Message]) -> Result<AgentResponse> {
+        if self.api_key.is_empty() && !self.base_url.contains("localhost") && !self.base_url.contains("127.0.0.1") {
+            return Err(anyhow!("No API key provided for OpenAI. Please export OPENAI_API_KEY=\"your_key\" or run with '--provider ollama'."));
+        }
+
         let mut api_messages = vec![json!({
             "role": "system",
             "content": SYSTEM_PROMPT
@@ -104,6 +108,9 @@ impl LlmProvider for OpenAiProvider {
         let resp = req.send().await?;
         if !resp.status().is_success() {
             let err_text = resp.text().await?;
+            if err_text.contains("invalid_api_key") || err_text.contains("You didn't provide an API key") {
+                return Err(anyhow!("OpenAI API key missing or invalid. Please export OPENAI_API_KEY=\"your_key\"."));
+            }
             return Err(anyhow!("OpenAI API error: {}", err_text));
         }
 
@@ -126,6 +133,10 @@ pub struct AnthropicProvider {
 #[async_trait]
 impl LlmProvider for AnthropicProvider {
     async fn chat(&self, messages: &[Message]) -> Result<AgentResponse> {
+        if self.api_key.is_empty() {
+            return Err(anyhow!("No API key provided for Anthropic. Please export ANTHROPIC_API_KEY=\"your_key\"."));
+        }
+
         let mut api_messages = Vec::new();
         for msg in messages {
             if msg.role != "system" {
@@ -182,6 +193,10 @@ pub struct GeminiProvider {
 #[async_trait]
 impl LlmProvider for GeminiProvider {
     async fn chat(&self, messages: &[Message]) -> Result<AgentResponse> {
+        if self.api_key.is_empty() {
+            return Err(anyhow!("No API key provided for Gemini. Please export GEMINI_API_KEY=\"your_key\"."));
+        }
+
         let mut contents = Vec::new();
         for msg in messages {
             let role = if msg.role == "assistant" { "model" } else { "user" };

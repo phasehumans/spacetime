@@ -20,6 +20,19 @@ use provider::create_provider;
 use sandbox::SandboxRuntime;
 use tui::TuiDashboard;
 
+fn handle_evaluation_error(err: anyhow::Error) {
+    let msg = err.to_string();
+    println!("\n{}", "Notice: Unable to complete evaluation session".bold().white());
+    println!("  {}", msg.dimmed());
+
+    if msg.contains("API key") || msg.contains("OPENAI_API_KEY") {
+        println!("\n{}", "Quick Solutions:".white());
+        println!("{}", "  • Set your OpenAI API key:      export OPENAI_API_KEY=\"your_key\"".dimmed());
+        println!("{}", "  • Or run with local Ollama:     spacetime eval --provider ollama --model llama3".dimmed());
+        println!("{}", "  • Or set key via CLI flag:      spacetime eval --api-key \"your_key\"\n".dimmed());
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -76,15 +89,17 @@ async fn main() -> Result<()> {
             let runtime = SandboxRuntime::new()?;
 
             if json {
-                let scorecard = EvaluationEngine::run_evaluation(
+                match EvaluationEngine::run_evaluation(
                     target_task,
                     provider.as_ref(),
                     &runtime,
                     &app_config,
                     None,
                 )
-                .await?;
-                println!("{}", serde_json::to_string_pretty(&scorecard)?);
+                .await {
+                    Ok(scorecard) => println!("{}", serde_json::to_string_pretty(&scorecard)?),
+                    Err(e) => handle_evaluation_error(e),
+                }
             } else if full_screen {
                 let mut dashboard = TuiDashboard::new(
                     target_task.id.clone(),
@@ -94,21 +109,26 @@ async fn main() -> Result<()> {
                 )?;
 
                 dashboard.start()?;
-                let scorecard = EvaluationEngine::run_evaluation(
+                let res = EvaluationEngine::run_evaluation(
                     target_task,
                     provider.as_ref(),
                     &runtime,
                     &app_config,
                     Some(&mut dashboard),
                 )
-                .await?;
+                .await;
                 dashboard.stop()?;
 
-                println!("\nEvaluation Finished!");
-                println!("Result: {}", if scorecard.passed { "PASSED" } else { "FAILED" });
-                println!("Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns);
-                println!("Commands Executed: {}", scorecard.commands_executed);
-                println!("Duration: {}s", scorecard.duration_seconds);
+                match res {
+                    Ok(scorecard) => {
+                        println!("\nEvaluation Finished!");
+                        println!("Result: {}", if scorecard.passed { "PASSED" } else { "FAILED" });
+                        println!("Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns);
+                        println!("Commands Executed: {}", scorecard.commands_executed);
+                        println!("Duration: {}s", scorecard.duration_seconds);
+                    }
+                    Err(e) => handle_evaluation_error(e),
+                }
             } else {
                 print_banner();
                 println!("[Provider] {}", app_config.provider.dimmed());
@@ -117,26 +137,29 @@ async fn main() -> Result<()> {
                 println!("• Objective:\n  {}", target_task.prompt.white());
 
                 let mut observer = TerminalObserver::new();
-                let scorecard = EvaluationEngine::run_evaluation(
+                match EvaluationEngine::run_evaluation(
                     target_task,
                     provider.as_ref(),
                     &runtime,
                     &app_config,
                     Some(&mut observer),
                 )
-                .await?;
-
-                println!("\n{}", "=".repeat(60).dimmed());
-                if scorecard.passed {
-                    println!("{}", "  Evaluation PASSED".bold().white());
-                } else {
-                    println!("{}", "  Evaluation FAILED".bold().dimmed());
+                .await {
+                    Ok(scorecard) => {
+                        println!("\n{}", "=".repeat(60).dimmed());
+                        if scorecard.passed {
+                            println!("{}", "  Evaluation PASSED".bold().white());
+                        } else {
+                            println!("{}", "  Evaluation FAILED".bold().dimmed());
+                        }
+                        println!("  Task: {}", scorecard.task_id.dimmed());
+                        println!("  Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns.to_string().dimmed());
+                        println!("  Commands Executed: {}", scorecard.commands_executed.to_string().dimmed());
+                        println!("  Duration: {}s", scorecard.duration_seconds.to_string().dimmed());
+                        println!("{}\n", "=".repeat(60).dimmed());
+                    }
+                    Err(e) => handle_evaluation_error(e),
                 }
-                println!("  Task: {}", scorecard.task_id.dimmed());
-                println!("  Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns.to_string().dimmed());
-                println!("  Commands Executed: {}", scorecard.commands_executed.to_string().dimmed());
-                println!("  Duration: {}s", scorecard.duration_seconds.to_string().dimmed());
-                println!("{}\n", "=".repeat(60).dimmed());
             }
         }
         None => {
@@ -150,26 +173,29 @@ async fn main() -> Result<()> {
             println!("• Objective:\n  {}", target_task.prompt.white());
 
             let mut observer = TerminalObserver::new();
-            let scorecard = EvaluationEngine::run_evaluation(
+            match EvaluationEngine::run_evaluation(
                 target_task,
                 provider.as_ref(),
                 &runtime,
                 &app_config,
                 Some(&mut observer),
             )
-            .await?;
-
-            println!("\n{}", "=".repeat(60).dimmed());
-            if scorecard.passed {
-                println!("{}", "  Evaluation PASSED".bold().white());
-            } else {
-                println!("{}", "  Evaluation FAILED".bold().dimmed());
+            .await {
+                Ok(scorecard) => {
+                    println!("\n{}", "=".repeat(60).dimmed());
+                    if scorecard.passed {
+                        println!("{}", "  Evaluation PASSED".bold().white());
+                    } else {
+                        println!("{}", "  Evaluation FAILED".bold().dimmed());
+                    }
+                    println!("  Task: {}", scorecard.task_id.dimmed());
+                    println!("  Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns.to_string().dimmed());
+                    println!("  Commands Executed: {}", scorecard.commands_executed.to_string().dimmed());
+                    println!("  Duration: {}s", scorecard.duration_seconds.to_string().dimmed());
+                    println!("{}\n", "=".repeat(60).dimmed());
+                }
+                Err(e) => handle_evaluation_error(e),
             }
-            println!("  Task: {}", scorecard.task_id.dimmed());
-            println!("  Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns.to_string().dimmed());
-            println!("  Commands Executed: {}", scorecard.commands_executed.to_string().dimmed());
-            println!("  Duration: {}s", scorecard.duration_seconds.to_string().dimmed());
-            println!("{}\n", "=".repeat(60).dimmed());
         }
     }
 
