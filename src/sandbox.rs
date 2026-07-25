@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use anyhow::Result;
 use bollard::container::{Config as BollardConfig, CreateContainerOptions, RemoveContainerOptions};
 use bollard::exec::{CreateExecOptions, StartExecResults};

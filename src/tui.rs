@@ -1,9 +1,7 @@
-#![allow(dead_code)]
-
 use crate::engine::EvaluationObserver;
 use anyhow::Result;
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event, KeyCode, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -136,10 +134,13 @@ impl TuiDashboard {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn handle_events(&mut self) -> Result<bool> {
         if event::poll(std::time::Duration::from_millis(50))? {
             if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
+                if key.code == KeyCode::Char('q')
+                    || (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL))
+                {
                     return Ok(true);
                 }
             }

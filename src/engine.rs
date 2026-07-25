@@ -2,9 +2,9 @@ use crate::config::AppConfig;
 use crate::provider::{LlmProvider, Message};
 use crate::sandbox::SandboxRuntime;
 use crate::task::BenchmarkTask;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EvaluationScorecard {
@@ -49,13 +49,19 @@ impl EvaluationEngine {
         let mut logs = Vec::new();
         let mut reasoning_history = Vec::new();
         let mut commands_executed = 0;
+        let timeout_dur = Duration::from_secs(task.timeout_seconds);
 
         // 1. Create sandbox
-        let mut sandbox = runtime.create_sandbox(&task.base_image).await?;
+        let mut sandbox = tokio::time::timeout(timeout_dur, runtime.create_sandbox(&task.base_image))
+            .await
+            .map_err(|_| anyhow!("Sandbox creation timed out after {}s", task.timeout_seconds))??;
 
         // 2. Run setup script if present
         if !task.setup_script.is_empty() {
-            let setup_res = sandbox.execute(&task.setup_script).await?;
+            let setup_res = tokio::time::timeout(timeout_dur, sandbox.execute(&task.setup_script))
+                .await
+                .map_err(|_| anyhow!("Setup script execution timed out"))??;
+
             logs.push(format!("SETUP STDOUT: {}", setup_res.stdout));
             if !setup_res.stderr.is_empty() {
                 logs.push(format!("SETUP STDERR: {}", setup_res.stderr));
@@ -77,7 +83,10 @@ impl EvaluationEngine {
                 obs.on_turn_start(turns_used);
             }
 
-            let agent_resp = provider.chat(&messages).await?;
+            let agent_resp = tokio::time::timeout(timeout_dur, provider.chat(&messages))
+                .await
+                .map_err(|_| anyhow!("LLM Provider response timed out on turn {}", turns_used))??;
+
             reasoning_history.push(agent_resp.reasoning.clone());
             if let Some(ref mut obs) = observer {
                 obs.on_reasoning(turns_used, &agent_resp.reasoning);
@@ -86,7 +95,10 @@ impl EvaluationEngine {
             match agent_resp.command {
                 Some(ref cmd) if !cmd.trim().is_empty() => {
                     commands_executed += 1;
-                    let exec_res = sandbox.execute(cmd).await?;
+                    let exec_res = tokio::time::timeout(timeout_dur, sandbox.execute(cmd))
+                        .await
+                        .map_err(|_| anyhow!("Command execution timed out on turn {}", turns_used))??;
+
                     let log_entry = format!(
                         "[$ {}] exit: {}\nstdout:\n{}\nstderr:\n{}",
                         cmd, exec_res.exit_code, exec_res.stdout, exec_res.stderr
@@ -124,7 +136,10 @@ impl EvaluationEngine {
         }
 
         // 5. Run validation script
-        let val_res = sandbox.execute(&task.validation_script).await?;
+        let val_res = tokio::time::timeout(timeout_dur, sandbox.execute(&task.validation_script))
+            .await
+            .map_err(|_| anyhow!("Validation script execution timed out"))??;
+
         let passed = val_res.exit_code == 0;
         let validation_output = format!(
             "Exit Code: {}\nSTDOUT: {}\nSTDERR: {}",

@@ -80,6 +80,9 @@ impl ConfigResolver {
         if let Ok(val) = env::var("SPACETIME_MODEL") {
             config.model = val;
         }
+        if let Ok(val) = env::var("OLLAMA_BASE_URL") {
+            config.base_url = Some(val);
+        }
 
         // Resolve API keys based on provider
         let env_key = match config.provider.to_lowercase().as_str() {
@@ -164,10 +167,8 @@ max_turns = 10
         )
         .unwrap();
 
-        // CLI flags override file config
         assert_eq!(config.provider, "anthropic");
         assert_eq!(config.model, "claude-3-5-sonnet-20241022");
-        // Non-overridden options come from file config
         assert_eq!(config.max_turns, 10);
     }
 }

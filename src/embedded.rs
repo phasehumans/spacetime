@@ -14,7 +14,7 @@ impl TaskLoader {
     pub fn load_embedded() -> Result<Vec<BenchmarkTask>> {
         let mut tasks = Vec::new();
         for file in EmbeddedTasks::iter() {
-            if file.ends_with(".sh") || file.ends_with(".yaml") {
+            if file.ends_with(".sh") {
                 if let Some(content_file) = EmbeddedTasks::get(file.as_ref()) {
                     let content_str = std::str::from_utf8(content_file.data.as_ref())?;
                     if let Ok(task) = BenchmarkTask::parse_bash_script(content_str) {

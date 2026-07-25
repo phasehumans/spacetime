@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::config::AppConfig;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
@@ -136,10 +134,12 @@ impl LlmProvider for AnthropicProvider {
     async fn chat(&self, messages: &[Message]) -> Result<AgentResponse> {
         let mut api_messages = Vec::new();
         for msg in messages {
-            api_messages.push(json!({
-                "role": if msg.role == "system" { "user" } else { &msg.role },
-                "content": msg.content
-            }));
+            if msg.role != "system" {
+                api_messages.push(json!({
+                    "role": msg.role,
+                    "content": msg.content
+                }));
+            }
         }
 
         let url = if self.base_url.ends_with("/v1/messages") {
