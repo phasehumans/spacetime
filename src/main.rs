@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
     match cli.command {
         Some(Commands::List) => {
             print_banner();
-            println!("{}", format!("⚡ Spacetime Benchmark Tasks ({})", tasks.len()).bold());
+            println!("{}", format!("Spacetime Benchmark Tasks ({})", tasks.len()).bold());
             println!("{:<12} {:<30} {:<15} {:<10}", "ID", "NAME", "IMAGE", "TURNS");
             println!("{}", "-".repeat(70));
             for t in &tasks {
@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
         }
         Some(Commands::Config) => {
             print_banner();
-            println!("{}", "⚙️  Spacetime Resolved Configuration:".bold());
+            println!("{}", "Spacetime Resolved Configuration:".bold());
             println!("{}", serde_json::to_string_pretty(&app_config)?);
         }
         Some(Commands::Eval {
@@ -104,8 +104,8 @@ async fn main() -> Result<()> {
                 .await?;
                 dashboard.stop()?;
 
-                println!("\n🏆 Evaluation Finished!");
-                println!("Result: {}", if scorecard.passed { "PASSED ✅".green() } else { "FAILED ❌".red() });
+                println!("\nEvaluation Finished!");
+                println!("Result: {}", if scorecard.passed { "PASSED" } else { "FAILED" });
                 println!("Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns);
                 println!("Commands Executed: {}", scorecard.commands_executed);
                 println!("Duration: {}s", scorecard.duration_seconds);
@@ -114,7 +114,7 @@ async fn main() -> Result<()> {
                 println!("[Provider] {}", app_config.provider.dimmed());
                 println!("[Model]    {}", app_config.model.dimmed());
                 println!("\n[Task]     {} - {}", target_task.id.bold(), target_task.name.bold());
-                println!("• Objective:\n  {}", target_task.prompt.bright_white());
+                println!("• Objective:\n  {}", target_task.prompt.white());
 
                 let mut observer = TerminalObserver::new();
                 let scorecard = EvaluationEngine::run_evaluation(
@@ -128,9 +128,9 @@ async fn main() -> Result<()> {
 
                 println!("\n{}", "=".repeat(60).dimmed());
                 if scorecard.passed {
-                    println!("{}", "  ✔ Evaluation PASSED".bold().bright_green());
+                    println!("{}", "  Evaluation PASSED".bold().white());
                 } else {
-                    println!("{}", "  ✖ Evaluation FAILED".bold().bright_red());
+                    println!("{}", "  Evaluation FAILED".bold().dimmed());
                 }
                 println!("  Task: {}", scorecard.task_id.dimmed());
                 println!("  Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns.to_string().dimmed());
@@ -147,7 +147,7 @@ async fn main() -> Result<()> {
             println!("[Provider] {}", app_config.provider.dimmed());
             println!("[Model]    {}", app_config.model.dimmed());
             println!("\n[Task]     {} - {}", target_task.id.bold(), target_task.name.bold());
-            println!("• Objective:\n  {}", target_task.prompt.bright_white());
+            println!("• Objective:\n  {}", target_task.prompt.white());
 
             let mut observer = TerminalObserver::new();
             let scorecard = EvaluationEngine::run_evaluation(
@@ -161,9 +161,9 @@ async fn main() -> Result<()> {
 
             println!("\n{}", "=".repeat(60).dimmed());
             if scorecard.passed {
-                println!("{}", "  ✔ Evaluation PASSED".bold().bright_green());
+                println!("{}", "  Evaluation PASSED".bold().white());
             } else {
-                println!("{}", "  ✖ Evaluation FAILED".bold().bright_red());
+                println!("{}", "  Evaluation FAILED".bold().dimmed());
             }
             println!("  Task: {}", scorecard.task_id.dimmed());
             println!("  Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns.to_string().dimmed());

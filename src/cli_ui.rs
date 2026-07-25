@@ -3,23 +3,23 @@ use crate::task::BenchmarkTask;
 use anyhow::{anyhow, Result};
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
+use inquire::ui::{Attributes, Color, RenderConfig, StyleSheet, Styled};
 use inquire::Select;
 use std::fmt;
 
 pub fn print_banner() {
     let logo = r#"
-  ____  ____   _    ____ _____ _____ ___ __  __ _____ 
- / ___||  _ \ / \  / ___| ____|_   _|_ _|  \/  | ____|
- \___ \| |_) / _ \| |   |  _|   | |  | || |\/| |  _|  
-  ___) |  __/ ___ \ |___| |___  | |  | || |  | | |___ 
- |____/|_| /_/   \_\____|_____| |_| |___|_|  |_|_____|
+  _____ _____   _   ___ _____ _____ _____ __  __ _____ 
+ /  ___|  _  \ / \ /  _|  ___|_   _|_   _|  \/  |  ___|
+ \ `--.| |_| // _ \| | | |__   | |   | | | .  . | |__  
+  `--. \  ___/ ___ \ |___| |___  | |  | || |  | | |___ 
+ \____/\_|  \/     \/\__|_____|\_/  \___/\_|  |_|_____|
 "#;
-    println!("{}", logo.bright_cyan().bold());
+    println!("{}", logo.white().bold());
     println!(
         "{}\n",
         "A benchmark for evaluating AI agents on interactive terminal tasks."
             .dimmed()
-            .italic()
     );
 }
 
@@ -27,17 +27,27 @@ struct TaskOption<'a>(&'a BenchmarkTask);
 
 impl<'a> fmt::Display for TaskOption<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ({})", self.0.id.bold(), self.0.name)
+        write!(f, "{}", self.0.id)
     }
 }
 
 pub fn select_task_interactively<'a>(tasks: &'a [BenchmarkTask]) -> Result<&'a BenchmarkTask> {
     print_banner();
 
+    let render_config = RenderConfig {
+        prompt_prefix: Styled::new("> ").with_fg(Color::DarkGrey),
+        prompt: StyleSheet::new().with_fg(Color::White).with_attr(Attributes::BOLD),
+        highlighted_option_prefix: Styled::new("❯ ").with_fg(Color::White).with_attr(Attributes::BOLD),
+        option: StyleSheet::new().with_fg(Color::DarkGrey),
+        selected_option: Some(StyleSheet::new().with_fg(Color::White).with_attr(Attributes::BOLD)),
+        ..Default::default()
+    };
+
     let options: Vec<TaskOption<'a>> = tasks.iter().map(TaskOption).collect();
 
-    let ans = Select::new("Select a benchmark task to run:", options)
+    let ans = Select::new("Select a task to run:", options)
         .with_page_size(10)
+        .with_render_config(render_config)
         .prompt()
         .map_err(|e| anyhow!("Selection prompt error: {}", e))?;
 
@@ -66,7 +76,7 @@ impl EvaluationObserver for TerminalObserver {
         pb.set_style(
             ProgressStyle::default_spinner()
                 .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-                .template("{spinner:.cyan} [{elapsed_precise}] {msg}")
+                .template("{spinner} [{elapsed_precise}] {msg}")
                 .unwrap(),
         );
         pb.set_message(format!("Turn {}: Agent thinking...", turn));
@@ -80,9 +90,7 @@ impl EvaluationObserver for TerminalObserver {
         }
         println!(
             "\n{}",
-            format!("• Turn {} Agent Thought:", turn)
-                .bold()
-                .bright_blue()
+            format!("• Turn {} Agent Thought:", turn).bold().white()
         );
         for line in reasoning.lines() {
             println!("  {}", line.dimmed());
@@ -97,17 +105,8 @@ impl EvaluationObserver for TerminalObserver {
         stderr: &str,
         exit_code: i64,
     ) {
-        let exit_str = if exit_code == 0 {
-            format!("exit: {}", exit_code).green()
-        } else {
-            format!("exit: {}", exit_code).red()
-        };
-
-        println!(
-            "{}",
-            format!("  $ {}", command).bold().yellow()
-        );
-        println!("    [{}]", exit_str);
+        println!("{}", format!("  $ {}", command).bold().white());
+        println!("{}", format!("    [exit: {}]", exit_code).dimmed());
 
         if !stdout.is_empty() {
             for line in stdout.lines() {
@@ -116,7 +115,7 @@ impl EvaluationObserver for TerminalObserver {
         }
         if !stderr.is_empty() {
             for line in stderr.lines() {
-                println!("    {}", line.red());
+                println!("    {}", line.dimmed());
             }
         }
     }
