@@ -1,17 +1,24 @@
 mod cli;
 mod config;
 mod embedded;
+mod engine;
 mod provider;
 mod sandbox;
 mod task;
+mod tui;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::Parser;
 use cli::{Cli, Commands};
 use config::ConfigResolver;
 use embedded::TaskLoader;
+use engine::EvaluationEngine;
+use provider::create_provider;
+use sandbox::SandboxRuntime;
+use tui::TuiDashboard;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let app_config = ConfigResolver::resolve(
@@ -44,16 +51,49 @@ fn main() -> Result<()> {
             println!("{}", serde_json::to_string_pretty(&app_config)?);
         }
         Commands::Eval { task, json } => {
-            let task_id = task.as_deref().unwrap_or("all");
+            let task_id = task.as_deref().unwrap_or("task-001");
+            let target_task = tasks
+                .iter()
+                .find(|t| t.id == task_id)
+                .ok_or_else(|| anyhow!("Task '{}' not found", task_id))?;
+
+            let provider = create_provider(&app_config)?;
+            let runtime = SandboxRuntime::new()?;
+
             if json {
-                println!(
-                    "{{\"status\":\"ready\",\"task\":\"{}\",\"provider\":\"{}\",\"model\":\"{}\"}}",
-                    task_id, app_config.provider, app_config.model
-                );
+                let scorecard = EvaluationEngine::run_evaluation(
+                    target_task,
+                    provider.as_ref(),
+                    &runtime,
+                    &app_config,
+                    None,
+                )
+                .await?;
+                println!("{}", serde_json::to_string_pretty(&scorecard)?);
             } else {
-                println!("🚀 Spacetime Agent Evaluation Harness");
-                println!("Target Task: {}", task_id);
-                println!("LLM Provider: {} ({})", app_config.provider, app_config.model);
+                let mut dashboard = TuiDashboard::new(
+                    target_task.id.clone(),
+                    app_config.provider.clone(),
+                    app_config.model.clone(),
+                    target_task.max_turns,
+                )?;
+
+                dashboard.start()?;
+                let scorecard = EvaluationEngine::run_evaluation(
+                    target_task,
+                    provider.as_ref(),
+                    &runtime,
+                    &app_config,
+                    Some(&mut dashboard),
+                )
+                .await?;
+                dashboard.stop()?;
+
+                println!("\n🏆 Evaluation Finished!");
+                println!("Result: {}", if scorecard.passed { "PASSED ✅" } else { "FAILED ❌" });
+                println!("Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns);
+                println!("Commands Executed: {}", scorecard.commands_executed);
+                println!("Duration: {}s", scorecard.duration_seconds);
             }
         }
     }
