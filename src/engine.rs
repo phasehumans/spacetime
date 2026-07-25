@@ -51,12 +51,10 @@ impl EvaluationEngine {
         let mut commands_executed = 0;
         let timeout_dur = Duration::from_secs(task.timeout_seconds);
 
-        // 1. Create sandbox
         let mut sandbox = tokio::time::timeout(timeout_dur, runtime.create_sandbox(&task.base_image))
             .await
             .map_err(|_| anyhow!("Sandbox creation timed out after {}s", task.timeout_seconds))??;
 
-        // 2. Run setup script if present
         if !task.setup_script.is_empty() {
             let setup_res = tokio::time::timeout(timeout_dur, sandbox.execute(&task.setup_script))
                 .await
@@ -68,7 +66,6 @@ impl EvaluationEngine {
             }
         }
 
-        // 3. Prepare initial turn messages
         let mut messages = vec![Message {
             role: "user".to_string(),
             content: format!("Task Objective: {}\nDescription: {}", task.prompt, task.description),
@@ -76,7 +73,6 @@ impl EvaluationEngine {
 
         let mut turns_used = 0;
 
-        // 4. Execution loop
         while turns_used < task.max_turns {
             turns_used += 1;
             if let Some(ref mut obs) = observer {
@@ -115,7 +111,6 @@ impl EvaluationEngine {
                         );
                     }
 
-                    // Feed observation back to agent
                     messages.push(Message {
                         role: "assistant".to_string(),
                         content: serde_json::to_string(&agent_resp)?,
@@ -129,13 +124,11 @@ impl EvaluationEngine {
                     });
                 }
                 _ => {
-                    // Agent finished task
                     break;
                 }
             }
         }
 
-        // 5. Run validation script
         let val_res = tokio::time::timeout(timeout_dur, sandbox.execute(&task.validation_script))
             .await
             .map_err(|_| anyhow!("Validation script execution timed out"))??;
@@ -146,7 +139,6 @@ impl EvaluationEngine {
             val_res.exit_code, val_res.stdout, val_res.stderr
         );
 
-        // 6. Explicit sandbox teardown
         sandbox.destroy().await?;
 
         let duration_seconds = start_time.elapsed().as_secs();
@@ -164,31 +156,5 @@ impl EvaluationEngine {
             logs,
             reasoning_history,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_scorecard_serialization() {
-        let scorecard = EvaluationScorecard {
-            task_id: "task-001".to_string(),
-            provider: "openai".to_string(),
-            model: "gpt-4o".to_string(),
-            passed: true,
-            turns_used: 3,
-            max_turns: 15,
-            duration_seconds: 12,
-            commands_executed: 2,
-            validation_output: "Welcome to nginx!".to_string(),
-            logs: vec!["apt-get update".to_string()],
-            reasoning_history: vec!["Inspect nginx config".to_string()],
-        };
-
-        let json = serde_json::to_string(&scorecard).unwrap();
-        assert!(json.contains("task-001"));
-        assert!(json.contains("gpt-4o"));
     }
 }

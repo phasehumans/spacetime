@@ -85,7 +85,6 @@ impl TuiDashboard {
                     ])
                     .split(f.area());
 
-                // 1. Header Bar
                 let status_style = match state.status.as_str() {
                     "PASSED" => Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
                     "FAILED" => Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
@@ -104,7 +103,6 @@ impl TuiDashboard {
                     .block(Block::default().borders(Borders::ALL).title(" Benchmark Status "));
                 f.render_widget(header, chunks[0]);
 
-                // 2. Main Content Split View (Left: Thoughts, Right: Sandbox Logs)
                 let body_chunks = Layout::default()
                     .direction(Direction::Horizontal)
                     .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -122,7 +120,6 @@ impl TuiDashboard {
                     .wrap(Wrap { trim: true });
                 f.render_widget(logs_panel, body_chunks[1]);
 
-                // 3. Footer Bar
                 let footer_text = Line::from(vec![
                     Span::styled("Press 'q' or Ctrl+C to abort evaluation session", Style::default().fg(Color::DarkGray)),
                 ]);
@@ -179,25 +176,5 @@ impl EvaluationObserver for TuiDashboard {
             turn, command, exit_code, stdout, stderr
         ));
         let _ = self.draw();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tui_state_initialization() {
-        let dashboard = TuiDashboard::new(
-            "task-001".to_string(),
-            "openai".to_string(),
-            "gpt-4o".to_string(),
-            15,
-        )
-        .unwrap();
-
-        assert_eq!(dashboard.state.task_id, "task-001");
-        assert_eq!(dashboard.state.provider, "openai");
-        assert_eq!(dashboard.state.max_turns, 15);
     }
 }

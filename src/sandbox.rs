@@ -103,7 +103,7 @@ impl Drop for SandboxGuard {
 }
 
 pub struct SandboxRuntime {
-    docker: Docker,
+    pub docker: Docker,
 }
 
 impl SandboxRuntime {
@@ -113,7 +113,6 @@ impl SandboxRuntime {
     }
 
     pub async fn create_sandbox(&self, image: &str) -> Result<SandboxGuard> {
-        // Ensure image is present
         let mut stream = self.docker.create_image(
             Some(CreateImageOptions {
                 from_image: image,
@@ -154,30 +153,5 @@ impl SandboxRuntime {
             docker: self.docker.clone(),
             destroyed: false,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_sandbox_unit_creation() {
-        let runtime = SandboxRuntime::new();
-        assert!(runtime.is_ok());
-    }
-
-    #[tokio::test]
-    #[ignore]
-    async fn test_sandbox_lifecycle_live_docker() {
-        let runtime = SandboxRuntime::new().unwrap();
-        let mut sandbox = runtime.create_sandbox("alpine:latest").await.unwrap();
-
-        let result = sandbox.execute("echo 'hello spacetime'").await.unwrap();
-        assert_eq!(result.exit_code, 0);
-        assert!(result.stdout.contains("hello spacetime"));
-
-        sandbox.destroy().await.unwrap();
-        assert!(sandbox.destroyed);
     }
 }

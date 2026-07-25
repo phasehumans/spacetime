@@ -1,4 +1,5 @@
 mod cli;
+mod cli_ui;
 mod config;
 mod embedded;
 mod engine;
@@ -10,7 +11,9 @@ mod tui;
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use cli::{Cli, Commands};
+use cli_ui::{print_banner, select_task_interactively, TerminalObserver};
 use config::ConfigResolver;
+use colored::*;
 use embedded::TaskLoader;
 use engine::EvaluationEngine;
 use provider::create_provider;
@@ -34,28 +37,40 @@ async fn main() -> Result<()> {
         TaskLoader::load_embedded()?
     };
 
-    match cli.command.unwrap_or(Commands::List) {
-        Commands::List => {
-            println!("⚡ Spacetime Benchmark Tasks ({})", tasks.len());
+    match cli.command {
+        Some(Commands::List) => {
+            print_banner();
+            println!("{}", format!("⚡ Spacetime Benchmark Tasks ({})", tasks.len()).bold());
             println!("{:<12} {:<30} {:<15} {:<10}", "ID", "NAME", "IMAGE", "TURNS");
             println!("{}", "-".repeat(70));
             for t in &tasks {
                 println!(
                     "{:<12} {:<30} {:<15} {:<10}",
-                    t.id, t.name, t.base_image, t.max_turns
+                    t.id.bold(),
+                    t.name,
+                    t.base_image.dimmed(),
+                    t.max_turns
                 );
             }
         }
-        Commands::Config => {
-            println!("⚙️  Spacetime Resolved Configuration:");
+        Some(Commands::Config) => {
+            print_banner();
+            println!("{}", "⚙️  Spacetime Resolved Configuration:".bold());
             println!("{}", serde_json::to_string_pretty(&app_config)?);
         }
-        Commands::Eval { task, json } => {
-            let task_id = task.as_deref().unwrap_or("task-001");
-            let target_task = tasks
-                .iter()
-                .find(|t| t.id == task_id)
-                .ok_or_else(|| anyhow!("Task '{}' not found", task_id))?;
+        Some(Commands::Eval {
+            task,
+            json,
+            full_screen,
+        }) => {
+            let target_task = if let Some(id) = task {
+                tasks
+                    .iter()
+                    .find(|t| t.id == id)
+                    .ok_or_else(|| anyhow!("Task '{}' not found", id))?
+            } else {
+                select_task_interactively(&tasks)?
+            };
 
             let provider = create_provider(&app_config)?;
             let runtime = SandboxRuntime::new()?;
@@ -70,7 +85,7 @@ async fn main() -> Result<()> {
                 )
                 .await?;
                 println!("{}", serde_json::to_string_pretty(&scorecard)?);
-            } else {
+            } else if full_screen {
                 let mut dashboard = TuiDashboard::new(
                     target_task.id.clone(),
                     app_config.provider.clone(),
@@ -90,11 +105,71 @@ async fn main() -> Result<()> {
                 dashboard.stop()?;
 
                 println!("\n🏆 Evaluation Finished!");
-                println!("Result: {}", if scorecard.passed { "PASSED ✅" } else { "FAILED ❌" });
+                println!("Result: {}", if scorecard.passed { "PASSED ✅".green() } else { "FAILED ❌".red() });
                 println!("Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns);
                 println!("Commands Executed: {}", scorecard.commands_executed);
                 println!("Duration: {}s", scorecard.duration_seconds);
+            } else {
+                print_banner();
+                println!("[Provider] {}", app_config.provider.dimmed());
+                println!("[Model]    {}", app_config.model.dimmed());
+                println!("\n[Task]     {} - {}", target_task.id.bold(), target_task.name.bold());
+                println!("• Objective:\n  {}", target_task.prompt.bright_white());
+
+                let mut observer = TerminalObserver::new();
+                let scorecard = EvaluationEngine::run_evaluation(
+                    target_task,
+                    provider.as_ref(),
+                    &runtime,
+                    &app_config,
+                    Some(&mut observer),
+                )
+                .await?;
+
+                println!("\n{}", "=".repeat(60).dimmed());
+                if scorecard.passed {
+                    println!("{}", "  ✔ Evaluation PASSED".bold().bright_green());
+                } else {
+                    println!("{}", "  ✖ Evaluation FAILED".bold().bright_red());
+                }
+                println!("  Task: {}", scorecard.task_id.dimmed());
+                println!("  Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns.to_string().dimmed());
+                println!("  Commands Executed: {}", scorecard.commands_executed.to_string().dimmed());
+                println!("  Duration: {}s", scorecard.duration_seconds.to_string().dimmed());
+                println!("{}\n", "=".repeat(60).dimmed());
             }
+        }
+        None => {
+            let target_task = select_task_interactively(&tasks)?;
+            let provider = create_provider(&app_config)?;
+            let runtime = SandboxRuntime::new()?;
+
+            println!("[Provider] {}", app_config.provider.dimmed());
+            println!("[Model]    {}", app_config.model.dimmed());
+            println!("\n[Task]     {} - {}", target_task.id.bold(), target_task.name.bold());
+            println!("• Objective:\n  {}", target_task.prompt.bright_white());
+
+            let mut observer = TerminalObserver::new();
+            let scorecard = EvaluationEngine::run_evaluation(
+                target_task,
+                provider.as_ref(),
+                &runtime,
+                &app_config,
+                Some(&mut observer),
+            )
+            .await?;
+
+            println!("\n{}", "=".repeat(60).dimmed());
+            if scorecard.passed {
+                println!("{}", "  ✔ Evaluation PASSED".bold().bright_green());
+            } else {
+                println!("{}", "  ✖ Evaluation FAILED".bold().bright_red());
+            }
+            println!("  Task: {}", scorecard.task_id.dimmed());
+            println!("  Turns Used: {} / {}", scorecard.turns_used, scorecard.max_turns.to_string().dimmed());
+            println!("  Commands Executed: {}", scorecard.commands_executed.to_string().dimmed());
+            println!("  Duration: {}s", scorecard.duration_seconds.to_string().dimmed());
+            println!("{}\n", "=".repeat(60).dimmed());
         }
     }
 

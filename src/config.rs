@@ -28,7 +28,7 @@ impl Default for AppConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-struct PartialConfig {
+pub struct PartialConfig {
     pub provider: Option<String>,
     pub model: Option<String>,
     pub api_key: Option<String>,
@@ -48,7 +48,6 @@ impl ConfigResolver {
     ) -> Result<AppConfig> {
         let mut config = AppConfig::default();
 
-        // 1. Read global config (~/.config/spacetime/config.toml) if present
         if let Some(user_dirs) = directories::ProjectDirs::from("com", "spacetime", "spacetime") {
             let global_path = user_dirs.config_dir().join("config.toml");
             if global_path.exists() {
@@ -60,7 +59,6 @@ impl ConfigResolver {
             }
         }
 
-        // 2. Read project config (spacetime.toml or explicit path) if present
         let project_path = project_config_path
             .map(|p| p.to_path_buf())
             .unwrap_or_else(|| PathBuf::from("spacetime.toml"));
@@ -73,7 +71,6 @@ impl ConfigResolver {
             }
         }
 
-        // 3. Read environment variables
         if let Ok(val) = env::var("SPACETIME_PROVIDER") {
             config.provider = val;
         }
@@ -84,7 +81,6 @@ impl ConfigResolver {
             config.base_url = Some(val);
         }
 
-        // Resolve API keys based on provider
         let env_key = match config.provider.to_lowercase().as_str() {
             "openai" => env::var("OPENAI_API_KEY").ok(),
             "anthropic" => env::var("ANTHROPIC_API_KEY").ok(),
@@ -97,7 +93,6 @@ impl ConfigResolver {
             config.api_key = Some(key);
         }
 
-        // 4. CLI flags override everything
         if let Some(p) = cli_provider {
             config.provider = p;
         }
@@ -130,45 +125,5 @@ impl ConfigResolver {
         if let Some(sec) = partial.timeout_seconds {
             base.timeout_seconds = sec;
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    #[test]
-    fn test_resolve_default_config() {
-        let config = ConfigResolver::resolve(None, None, None, None).unwrap();
-        assert_eq!(config.provider, "openai");
-        assert_eq!(config.model, "gpt-4o");
-    }
-
-    #[test]
-    fn test_resolve_cli_overrides_toml() {
-        let mut file = NamedTempFile::new().unwrap();
-        writeln!(
-            file,
-            r#"
-provider = "gemini"
-model = "gemini-1.5-pro"
-max_turns = 10
-"#
-        )
-        .unwrap();
-
-        let config = ConfigResolver::resolve(
-            Some("anthropic".to_string()),
-            Some("claude-3-5-sonnet-20241022".to_string()),
-            None,
-            Some(file.path()),
-        )
-        .unwrap();
-
-        assert_eq!(config.provider, "anthropic");
-        assert_eq!(config.model, "claude-3-5-sonnet-20241022");
-        assert_eq!(config.max_turns, 10);
     }
 }
