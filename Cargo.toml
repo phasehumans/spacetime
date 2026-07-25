@@ -23,6 +23,8 @@ directories = "5.0"
 rust-embed = { version = "8.4", features = ["include-exclude"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
+bollard = "0.18"
+futures-util = "0.3"
 
 [dev-dependencies]
 tempfile = "3.10"

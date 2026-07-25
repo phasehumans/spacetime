@@ -1,6 +1,7 @@
 mod cli;
 mod config;
 mod embedded;
+mod sandbox;
 mod task;
 
 use anyhow::Result;
