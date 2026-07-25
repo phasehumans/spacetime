@@ -1,6 +1,7 @@
 mod cli;
 mod config;
 mod embedded;
+mod provider;
 mod sandbox;
 mod task;
 
