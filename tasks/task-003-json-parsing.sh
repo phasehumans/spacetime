@@ -1,0 +1,16 @@
+#!/usr/bin/env spacetime
+# id: task-003
+# name: Extract User Email
+# description: The agent needs to parse a JSON file and extract a specific value into a new file.
+# base_image: ubuntu:22.04
+# max_turns: 15
+# timeout: 300
+# prompt: There is a JSON file at /tmp/data.json containing user data. Extract the email address of the user named 'Bob' and save it to a new file at /tmp/bob_email.txt. Only the email address should be in the file.
+
+# === SETUP ===
+apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y jq
+echo '{"users": [{"id": 1, "name": "Alice", "email": "alice@example.com"}, {"id": 2, "name": "Bob", "email": "bob@example.com"}]}' > /tmp/data.json
+
+# === VALIDATE ===
+test -f /tmp/bob_email.txt
+grep -q "bob@example.com" /tmp/bob_email.txt
