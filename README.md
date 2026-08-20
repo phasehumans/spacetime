@@ -1,4 +1,4 @@
-# ✱ Spacetime
+# Spacetime
 
 Spacetime is a benchmark for evaluating AI agents on interactive terminal tasks.
 It executes agents inside isolated Docker containers to solve realistic Linux problems and tests if their solutions actually work.
@@ -9,7 +9,7 @@ It executes agents inside isolated Docker containers to solve realistic Linux pr
 - **Simple Interactive CLI:** A step-by-step terminal wizard to pick your agent, choose models, and run benchmarks in seconds.
 
 ```bash
-curl -fsSL https://spacetime.trydecember.com/install.sh | bash
+curl -fsSL https://spacetime.trydecember.com | bash
 ```
 
 ```mermaid

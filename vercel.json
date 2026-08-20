@@ -1,6 +1,7 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "outputDirectory": "website",
   "redirects": [
     {
       "source": "/",
@@ -23,16 +24,6 @@
       "source": "/install.ps1",
       "destination": "https://raw.githubusercontent.com/phasehumans/spacetime/main/install.ps1",
       "permanent": false
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/website/$1"
     }
   ]
 }
