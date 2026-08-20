@@ -24,15 +24,5 @@
       "destination": "https://raw.githubusercontent.com/phasehumans/spacetime/main/install.ps1",
       "permanent": false
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/website/index.html"
-    },
-    {
-      "source": "/:match*",
-      "destination": "/website/:match*"
-    }
   ]
 }
