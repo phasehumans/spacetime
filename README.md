@@ -6,9 +6,12 @@
 
 spacetime evaluates ai agents inside isolated docker containers on real terminal challenges like fixing broken nginx servers, resolving git conflicts, parsing logs, and repairing port clashes. solutions are tested against strict test assertions to verify what actually works.
 
+it runs agents through 50 embedded linux environments covering sysadmin, networking, debugging, and data pipelines. beyond basic pass/fail checks, spacetime captures deep telemetry across the execution lifecycle—tracking pass rates, latency, turn efficiency, error recovery, token economics & cost, and self-verification behavior.
+
 ```bash
 curl -fsSL https://spacetime.trydecember.com | bash
 ```
+
 
 ### how it works
 
@@ -17,6 +20,14 @@ curl -fsSL https://spacetime.trydecember.com | bash
 - streams live terminal output in real time
 - runs automated tests to verify the solution
 - cleans up and generates the final scorecard
+
+### task structure
+
+each task is self-contained with four simple files:
+- `prompt.txt` — the objective presented to the agent
+- `setup.sh` — prepares the broken state inside the fresh container
+- `test.sh` — ground-truth test assertions
+- `meta.sh` — task metadata, timeout, and turn configuration
 
 ```mermaid
 sequenceDiagram
@@ -45,3 +56,7 @@ sequenceDiagram
     CLI->>Telemetry: compute resolution rate, latency & intelligence metrics
     Telemetry-->>CLI: render scorecard & save json report
 ```
+
+to contribute to this repo or add more tasks, feel free to open a pull request. if you face any difficulties, reach out to team@trydecember.com.
+
+

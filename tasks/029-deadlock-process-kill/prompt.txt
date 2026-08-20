@@ -1,0 +1,1 @@
+A deadlocked background process is holding a stale PID lockfile at /var/run/worker.pid and running a stalled sleep loop. Inspect the lockfile, terminate the deadlocked process if it is still running, remove /var/run/worker.pid, and start the service script /usr/local/bin/worker.sh in the background.

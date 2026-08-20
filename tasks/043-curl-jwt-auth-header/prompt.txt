@@ -1,0 +1,4 @@
+A local mock API server is running on http://127.0.0.1:8000.
+1. Make a POST request to http://127.0.0.1:8000/auth with JSON payload '{"username": "admin", "password": "secretpassword"}' to receive a response JSON containing '{"token": "..."}'.
+2. Using that token in an 'Authorization: Bearer <token>' header, make a GET request to http://127.0.0.1:8000/data.
+3. Save the response body from /data to /root/data.json.

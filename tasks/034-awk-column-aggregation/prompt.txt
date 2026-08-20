@@ -1,0 +1,1 @@
+A web access log is stored at /var/log/traffic.csv with header: timestamp,ip,status_code,bytes_sent,endpoint. Using terminal tools (e.g. awk/cut/bash), calculate the sum of bytes_sent (column 4) for all requests where status_code (column 3) is 200, and write the integer sum to /root/total_bandwidth.txt without trailing spaces or extra text.

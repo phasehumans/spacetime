@@ -77,6 +77,14 @@ enum Commands {
     Info {
         task_id: String,
     },
+
+    CreateTask {
+        name: String,
+        #[arg(short, long)]
+        description: Option<String>,
+        #[arg(short = 't', long, default_value = "tasks")]
+        tasks_dir: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -111,6 +119,9 @@ async fn main() -> Result<()> {
         }
         Some(Commands::Info { task_id }) => {
             show_task_info(tasks_dir, &task_id)?;
+        }
+        Some(Commands::CreateTask { name, description, tasks_dir: custom_tasks_dir }) => {
+            create_benchmark_task(&name, description.as_deref(), &custom_tasks_dir)?;
         }
         Some(Commands::Run { task_id }) => {
             ensure_sandbox_image(&cli.image, cli.force_rebuild).await?;
@@ -263,5 +274,96 @@ async fn run_single_task(
     print_banner();
     let task = find_task_by_id(tasks_dir, task_id)?;
     TaskRunner::run_task(&task, agent_profile, image, timeout, false).await?;
+    Ok(())
+}
+
+fn create_benchmark_task(name: &str, description: Option<&str>, tasks_dir: &Path) -> Result<()> {
+    use std::fs;
+    use crate::tui::theme::mint_green;
+
+    let clean_name = name
+        .to_lowercase()
+        .replace([' ', '_'], "-")
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-')
+        .collect::<String>();
+
+    if clean_name.is_empty() {
+        return Err(anyhow::anyhow!("Invalid task name"));
+    }
+
+    if !tasks_dir.exists() {
+        fs::create_dir_all(tasks_dir)?;
+    }
+
+    let mut highest_idx = 0;
+    if let Ok(entries) = fs::read_dir(tasks_dir) {
+        for entry in entries.flatten() {
+            let filename = entry.file_name().to_string_lossy().to_string();
+            if let Some((prefix, _)) = filename.split_once('-') {
+                if let Ok(idx) = prefix.parse::<usize>() {
+                    if idx > highest_idx {
+                        highest_idx = idx;
+                    }
+                }
+            }
+        }
+    }
+
+    let next_idx = highest_idx + 1;
+    let folder_name = format!("{:03}-{}", next_idx, clean_name);
+    let target_dir = tasks_dir.join(&folder_name);
+
+    if target_dir.exists() {
+        return Err(anyhow::anyhow!("Task directory already exists: {}", target_dir.display()));
+    }
+
+    fs::create_dir_all(&target_dir)?;
+
+    let task_desc = description.unwrap_or("Task created with spacetime create-task");
+
+    let prompt_content = format!("{}\n", task_desc);
+    fs::write(target_dir.join("prompt.txt"), prompt_content)?;
+
+    let setup_content = format!(
+        "#!/usr/bin/env bash\nset -e\n\n# Setup broken environment state for {}\necho \"Setting up environment for {}...\"\n",
+        folder_name, folder_name
+    );
+    fs::write(target_dir.join("setup.sh"), setup_content)?;
+
+    let test_content = "#!/usr/bin/env bash\nset -e\n\n# Ground-truth verification assertions (exit 0 = pass, exit 1 = fail)\necho \"Running ground-truth tests...\"\nexit 0\n";
+    fs::write(target_dir.join("test.sh"), test_content)?;
+
+    let meta_content = format!(
+        "TASK_ID=\"{}\"\nTASK_NAME=\"{}\"\nBASE_IMAGE=\"ubuntu:22.04\"\nMAX_TURNS=15\nTIMEOUT_SECS=60\nDESCRIPTION=\"{}\"\n",
+        folder_name, name, task_desc
+    );
+    fs::write(target_dir.join("meta.sh"), meta_content)?;
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if let Ok(metadata) = fs::metadata(target_dir.join("setup.sh")) {
+            let mut perms = metadata.permissions();
+            perms.set_mode(0o755);
+            let _ = fs::set_permissions(target_dir.join("setup.sh"), perms);
+        }
+        if let Ok(metadata) = fs::metadata(target_dir.join("test.sh")) {
+            let mut perms = metadata.permissions();
+            perms.set_mode(0o755);
+            let _ = fs::set_permissions(target_dir.join("test.sh"), perms);
+        }
+    }
+
+    println!("\n{}", orange("✱  task scaffold created successfully!"));
+    println!("  {:<12} {}", white("folder:"), mint_green(&target_dir.display().to_string()));
+    println!("  {:<12} {}", white("task id:"), white(&folder_name));
+    println!("  {:<12} {}", white("prompt:"), muted(&target_dir.join("prompt.txt").display().to_string()));
+    println!("  {:<12} {}", white("setup:"), muted(&target_dir.join("setup.sh").display().to_string()));
+    println!("  {:<12} {}", white("test:"), muted(&target_dir.join("test.sh").display().to_string()));
+    println!("\n{}", trunk("│  test your new task with:"));
+    println!("{}  {}", trunk("│"), white(&format!("spacetime run {}", folder_name)));
+    println!();
+
     Ok(())
 }

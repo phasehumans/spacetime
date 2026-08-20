@@ -1,0 +1,1 @@
+The SQLite database at /root/ecommerce/store.db is experiencing slow queries on customer email lookups and order status filtering. Inspect /root/ecommerce/store.db and create two indexes: 'idx_users_email' on the 'users(email)' column and 'idx_orders_status' on the 'orders(status, user_id)' columns. Ensure both indexes exist in sqlite_master.

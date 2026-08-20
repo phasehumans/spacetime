@@ -835,6 +835,39 @@ impl AgentProfile {
 
         envs
     }
+
+    pub fn token_pricing_per_million(&self) -> (f64, f64) {
+        let model_str = self.model.as_deref().unwrap_or("").to_lowercase();
+        if model_str.contains("3-7-sonnet") || model_str.contains("3.7-sonnet") {
+            (3.00, 15.00)
+        } else if model_str.contains("3-5-sonnet") || model_str.contains("3.5-sonnet") {
+            (3.00, 15.00)
+        } else if model_str.contains("3-5-haiku") || model_str.contains("3.5-haiku") {
+            (0.80, 4.00)
+        } else if model_str.contains("gemini-2.5-pro") || model_str.contains("gemini-1.5-pro") {
+            (1.25, 5.00)
+        } else if model_str.contains("flash") {
+            (0.10, 0.40)
+        } else if model_str.contains("o3-mini") {
+            (1.10, 4.40)
+        } else if model_str.contains("gpt-4o-mini") {
+            (0.15, 0.60)
+        } else if model_str.contains("gpt-4o") || model_str.contains("codex") {
+            (2.50, 10.00)
+        } else if model_str.contains("r1") {
+            (0.55, 2.19)
+        } else if model_str.contains("v3") || model_str.contains("deepseek") {
+            (0.14, 0.28)
+        } else {
+            match self.harness {
+                HarnessType::ClaudeCode => (3.00, 15.00),
+                HarnessType::GeminiCli | HarnessType::Antigravity => (1.25, 5.00),
+                HarnessType::Codex => (2.50, 10.00),
+                HarnessType::CursorCli => (3.00, 15.00),
+                _ => (2.00, 8.00),
+            }
+        }
+    }
 }
 
 #[cfg(test)]

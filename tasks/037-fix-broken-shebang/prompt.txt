@@ -1,0 +1,1 @@
+The scripts inside /opt/scripts/ fail to run with 'No such file or directory' because their shebang lines reference non-existent /usr/local/bin/python or /bin/python. Update the shebang lines on all .py scripts in /opt/scripts/ to '#!/usr/bin/env python3', make sure they are executable, and verify they run without error.

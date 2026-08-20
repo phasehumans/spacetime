@@ -1,0 +1,1 @@
+The DNS resolution configuration file in /etc/resolv.conf is broken because it contains invalid loopback IP entries that prevent name resolution. Update /etc/resolv.conf so it has valid nameservers 8.8.8.8 and 1.1.1.1 with options timeout:2 attempts:3.

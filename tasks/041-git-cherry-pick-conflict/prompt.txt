@@ -1,0 +1,1 @@
+In the repository /root/project, an in-progress git cherry-pick has stalled due to conflicts in config.py. Resolve the conflict by keeping both the 'TIMEOUT = 60' setting and the 'ENABLE_METRICS = True' setting, stage config.py, and run 'git cherry-pick --continue' to complete the cherry-pick cleanly.

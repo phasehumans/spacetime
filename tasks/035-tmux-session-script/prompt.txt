@@ -1,0 +1,1 @@
+Create an executable shell script at /usr/local/bin/start-worker.sh. When executed, it must start a new detached tmux session named 'worker_pool' running the command 'sleep 100'. If the session 'worker_pool' already exists, it should not fail (idempotent). Execute the script once so the session is active.

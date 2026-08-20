@@ -1,0 +1,1 @@
+The virtual environment at /opt/app-venv/ has broken symlinks for bin/python, bin/python3, and pyvenv.cfg pointing to an old non-existent python installation path (/usr/local/bin/python3.11). Re-point or regenerate the virtual environment so that /opt/app-venv/bin/python3 executes the system python3 successfully and imports standard libraries.

@@ -1,0 +1,1 @@
+Configure system limits to allow core dumps for all users. Create or edit /etc/security/limits.d/coredump.conf with configuration rules that set both soft and hard core limits to 'unlimited' for all users (*).

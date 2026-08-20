@@ -1,0 +1,5 @@
+Create a gzip-compressed tar archive of the directory /var/www/site/ and save it to /backup/site.tar.gz. When creating the archive, you must strictly exclude:
+1. All '.git' directories and files
+2. All 'node_modules' directories and files
+3. All files ending with '.tmp'
+Ensure the archive exists and can be decompressed.

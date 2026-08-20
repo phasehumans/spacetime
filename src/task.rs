@@ -186,14 +186,14 @@ mod tests {
     fn test_load_all_tasks() {
         let tasks_dir = Path::new("tasks");
         let tasks = load_all_tasks(tasks_dir).expect("Failed to load tasks");
-        assert_eq!(tasks.len(), 20, "Expected 20 benchmark tasks");
+        assert_eq!(tasks.len(), 50, "Expected 50 benchmark tasks");
     }
 
     #[test]
     fn test_load_embedded_tasks_fallback() {
         let nonexistent_dir = Path::new("/nonexistent_spacetime_tasks_dir_12345");
         let tasks = load_all_tasks(nonexistent_dir).expect("Failed to load embedded tasks on fallback");
-        assert_eq!(tasks.len(), 20, "Expected 20 embedded tasks loaded from binary");
+        assert_eq!(tasks.len(), 50, "Expected 50 embedded tasks loaded from binary");
     }
 
     #[test]

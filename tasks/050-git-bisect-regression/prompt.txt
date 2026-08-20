@@ -1,0 +1,1 @@
+In the git repository /root/calculator, the current HEAD commit fails the test script './test.sh', but the initial commit 'v1.0' passed. Use 'git bisect' (or git commit testing) to find the first bad commit that introduced the failure. Write the full 40-character commit SHA (hash) of the bad commit to /root/bad_commit.txt without trailing spaces or newline.

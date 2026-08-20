@@ -1,0 +1,1 @@
+An automated firewall script at /root/firewall/rules.sh is blocking incoming TCP traffic on port 8080 by applying a DROP rule. Modify /root/firewall/rules.sh to allow incoming TCP traffic on port 8080 (ACCEPT) while keeping all other rules intact, and verify /root/firewall/rules.sh executes cleanly without errors.

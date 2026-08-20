@@ -1,0 +1,1 @@
+The Python file server at /root/fileserver/server.py contains a path traversal vulnerability in get_file() that allows reading files outside the base directory. Modify /root/fileserver/server.py so that get_file(base_dir, user_path) rejects paths traversing outside base_dir by returning None or raising ValueError, and returns the resolved safe file path only for valid subpaths.

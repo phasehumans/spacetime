@@ -1,0 +1,5 @@
+Create an executable firewall configuration script at /usr/local/bin/setup-firewall.sh. The script must define iptables rules for the INPUT chain:
+1. Accept established and related connections (-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT).
+2. Rate-limit ICMP echo-request packets (ping) using the limit module (-p icmp --icmp-type echo-request -m limit --limit 1/s -j ACCEPT).
+3. Drop all other ICMP echo-request packets (-p icmp --icmp-type echo-request -j DROP).
+Ensure the script is executable and syntactically valid bash.

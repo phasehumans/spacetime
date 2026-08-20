@@ -1,0 +1,1 @@
+A git repository in /root/repo has a corrupted index file (.git/index is truncated) and an unmerged branch 'hotfix' with a detached HEAD. Rebuild the git index, checkout the 'main' branch, merge the 'hotfix' branch into 'main', and ensure 'git status' is clean.

@@ -1,0 +1,1 @@
+The file /root/stream.json was interrupted during serialization and has trailing commas, missing closing brackets, and unescaped quotes. Repair the file so that jq . /root/stream.json parses cleanly without syntax errors and contains 3 valid user objects.

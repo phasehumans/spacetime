@@ -1,0 +1,1 @@
+The Python project at /root/apiserver has outdated dependencies with known vulnerabilities pinned in /root/apiserver/requirements.txt (requests==2.18.4, urllib3==1.22, flask==0.12.2). Update /root/apiserver/requirements.txt to modern secure versions (requests>=2.31.0, urllib3>=2.0.0, flask>=3.0.0) and write a dependency audit summary to /root/apiserver/AUDIT.md.

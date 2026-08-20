@@ -1,0 +1,4 @@
+A template config is located at /etc/app/config.template.yaml and environment values are in /etc/app/.env.
+1. Export the variables from /etc/app/.env (DATABASE_HOST, DATABASE_PORT, API_SECRET).
+2. Using envsubst (or sed/awk), substitute the environment variables into /etc/app/config.template.yaml and output the result to /etc/app/config.yaml.
+3. Verify /etc/app/config.yaml contains no remaining ${VARIABLE} placeholders.

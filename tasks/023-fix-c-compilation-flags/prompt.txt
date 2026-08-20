@@ -1,0 +1,1 @@
+The C program in /root/calc fails to compile using 'make' due to missing linker flags (pthread, math library) and compiler options in /root/calc/Makefile. Fix the Makefile so that running 'make' from /root/calc builds the binary /root/calc/calculator and running './calculator 16' prints 'sqrt(16.00) = 4.00'.

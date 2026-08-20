@@ -175,11 +175,25 @@ impl TaskRunner {
 
         save_task_log(&task.id, &agent_profile.name(), &agent_output, passed)?;
 
+        let prompt_chars = task.prompt.len() + 1500; // includes base system prompt & tool schema context
+        let prompt_tokens = (prompt_chars as f64 / 3.8).ceil() as usize;
+        let completion_tokens = if agent_output.is_empty() {
+            50
+        } else {
+            (agent_output.len() as f64 / 3.8).ceil() as usize
+        };
+        let total_tokens = prompt_tokens + completion_tokens;
+
+        let (input_rate, output_rate) = agent_profile.token_pricing_per_million();
+        let estimated_cost_usd = (prompt_tokens as f64 / 1_000_000.0) * input_rate
+            + (completion_tokens as f64 / 1_000_000.0) * output_rate;
+
         if !silent {
             println!("\n{}", "• SPACETIME EVALUATION •".bold());
             println!("  {:<12} {}", "Task:".dimmed(), task.name.white());
             println!("  {:<12} {}", "Agent:".dimmed(), agent_name.white());
             println!("  {:<12} {:.2}s", "Duration:".dimmed(), total_duration);
+            println!("  {:<12} {} tokens (${:.4} USD)", "Tokens:".dimmed(), total_tokens, estimated_cost_usd);
             if passed {
                 println!("  {:<12} {}", "Result:".dimmed(), "PASSED".green().bold());
             } else {
@@ -197,6 +211,10 @@ impl TaskRunner {
             exit_code: agent_exit_code,
             error_message,
             agent_output,
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
+            estimated_cost_usd,
         })
     }
 }

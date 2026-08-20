@@ -1,0 +1,5 @@
+Create a Redis snapshot backup script at /usr/local/bin/backup-redis.sh. The script must:
+1. Ensure the directory /var/backups/redis exists.
+2. If /var/lib/redis/dump.rdb exists, create a gzip-compressed copy at /var/backups/redis/dump_backup.rdb.gz.
+3. Set permissions of the backup file to 0600.
+4. Make /usr/local/bin/backup-redis.sh executable and execute it once.

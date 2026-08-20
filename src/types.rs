@@ -34,6 +34,14 @@ pub struct TaskResult {
     pub exit_code: Option<i32>,
     pub error_message: Option<String>,
     pub agent_output: String,
+    #[serde(default)]
+    pub prompt_tokens: usize,
+    #[serde(default)]
+    pub completion_tokens: usize,
+    #[serde(default)]
+    pub total_tokens: usize,
+    #[serde(default)]
+    pub estimated_cost_usd: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -46,6 +54,16 @@ pub struct IntelligenceProfile {
     pub self_verification_rate: f64,
     pub verified_count: usize,
     pub context_hygiene_score: f64,
+    #[serde(default)]
+    pub total_prompt_tokens: usize,
+    #[serde(default)]
+    pub total_completion_tokens: usize,
+    #[serde(default)]
+    pub total_tokens: usize,
+    #[serde(default)]
+    pub total_cost_usd: f64,
+    #[serde(default)]
+    pub cost_per_resolved_task: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,6 +77,12 @@ pub struct BenchmarkSuiteResult {
     pub failed_tasks: usize,
     pub pass_rate: f64,
     pub total_duration_secs: f64,
+    #[serde(default)]
+    pub total_tokens: usize,
+    #[serde(default)]
+    pub total_cost_usd: f64,
+    #[serde(default)]
+    pub cost_per_resolved_task: f64,
     pub results: Vec<TaskResult>,
     #[serde(default)]
     pub intelligence_profile: Option<IntelligenceProfile>,

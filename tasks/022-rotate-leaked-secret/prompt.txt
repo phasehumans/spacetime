@@ -1,0 +1,1 @@
+A sensitive configuration file at /root/service/.env contains a compromised test secret (COMPROMISED_KEY_999) and has overly permissive file permissions (0777). Generate a secure 32-character hexadecimal key, update SECRET_KEY with it, set the file permissions strictly to 0600, and ensure /root/service/.env.example contains 'SECRET_KEY=replace_with_32_char_hex'.

@@ -1,0 +1,1 @@
+A Kubernetes-style cluster state is stored at /var/data/cluster.json. Using jq or terminal tools, extract a JSON array containing only the 'ip' strings of all nodes where 'status' is 'Ready' and 'drain' is false, sorted in alphabetical order, and save the result to /root/healthy_nodes.json.

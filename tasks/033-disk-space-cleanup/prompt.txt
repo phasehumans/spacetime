@@ -1,0 +1,1 @@
+The disk is filling up due to runaway log files. Search /var/log/app/ recursively for all files ending in .log that are strictly larger than 50MB (50M). For each matching file, truncate its size to 0 bytes (do not delete the file) and append its full path to /root/truncated.txt (one per line, sorted).

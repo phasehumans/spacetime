@@ -115,6 +115,9 @@ pub async fn run_benchmark_suite(
         failed_tasks,
         pass_rate,
         total_duration_secs: total_duration,
+        total_tokens: intelligence_profile.total_tokens,
+        total_cost_usd: intelligence_profile.total_cost_usd,
+        cost_per_resolved_task: intelligence_profile.cost_per_resolved_task,
         results,
         intelligence_profile: Some(intelligence_profile),
         harness_insights,
@@ -158,8 +161,17 @@ pub fn compute_intelligence_profile(
     let mut recovered_count = 0;
     let mut verified_count = 0;
     let mut total_output_chars = 0;
+    let mut total_prompt_tokens = 0;
+    let mut total_completion_tokens = 0;
+    let mut total_tokens = 0;
+    let mut total_cost_usd = 0.0;
 
     for r in results {
+        total_prompt_tokens += r.prompt_tokens;
+        total_completion_tokens += r.completion_tokens;
+        total_tokens += r.total_tokens;
+        total_cost_usd += r.estimated_cost_usd;
+
         let output = &r.agent_output;
         total_output_chars += output.len();
         let lower = output.to_lowercase();
@@ -208,6 +220,13 @@ pub fn compute_intelligence_profile(
     };
     let self_verification_rate = (verified_count as f64 / total_tasks as f64) * 100.0;
 
+    let passed_count = results.iter().filter(|r| r.passed).count();
+    let cost_per_resolved_task = if passed_count > 0 {
+        total_cost_usd / passed_count as f64
+    } else {
+        0.0
+    };
+
     let avg_chars = total_output_chars as f64 / total_tasks as f64;
     let context_hygiene_score = if avg_chars < 3000.0 {
         98.5
@@ -228,6 +247,11 @@ pub fn compute_intelligence_profile(
         self_verification_rate,
         verified_count,
         context_hygiene_score,
+        total_prompt_tokens,
+        total_completion_tokens,
+        total_tokens,
+        total_cost_usd,
+        cost_per_resolved_task,
     }
 }
 
@@ -426,6 +450,29 @@ pub fn print_evaluation_summary(
                 profile.context_hygiene_score
             ))
         );
+
+        println!("{}", trunk("│"));
+        println!("{}  {}", orange("✱"), white("token economics & cost:"));
+        println!(
+            "{}  {:<26} {}",
+            trunk("│"),
+            white("total tokens used:"),
+            muted(&format!("{} (prompt: {}, completion: {})", profile.total_tokens, profile.total_prompt_tokens, profile.total_completion_tokens))
+        );
+        println!(
+            "{}  {:<26} {}",
+            trunk("│"),
+            white("estimated run cost:"),
+            mint_green(&format!("${:.4} USD", profile.total_cost_usd))
+        );
+        if profile.cost_per_resolved_task > 0.0 {
+            println!(
+                "{}  {:<26} {}",
+                trunk("│"),
+                white("cost per resolved task:"),
+                muted(&format!("${:.4} USD / pass", profile.cost_per_resolved_task))
+            );
+        }
     }
 
     let mut category_map: BTreeMap<&'static str, (usize, usize)> = BTreeMap::new();
@@ -490,6 +537,9 @@ mod tests {
             failed_tasks: 1,
             pass_rate: 50.0,
             total_duration_secs: 24.5,
+            total_tokens: 1200,
+            total_cost_usd: 0.0074,
+            cost_per_resolved_task: 0.0074,
             results: vec![
                 TaskResult {
                     task_id: "001-nginx-config".to_string(),
@@ -500,6 +550,10 @@ mod tests {
                     exit_code: Some(0),
                     error_message: None,
                     agent_output: "Done".to_string(),
+                    prompt_tokens: 450,
+                    completion_tokens: 150,
+                    total_tokens: 600,
+                    estimated_cost_usd: 0.0035,
                 },
                 TaskResult {
                     task_id: "004-port-conflict".to_string(),
@@ -510,6 +564,10 @@ mod tests {
                     exit_code: Some(1),
                     error_message: Some("Port in use".to_string()),
                     agent_output: "Failed".to_string(),
+                    prompt_tokens: 420,
+                    completion_tokens: 180,
+                    total_tokens: 600,
+                    estimated_cost_usd: 0.0039,
                 },
             ],
             sandbox: "spacetime-sandbox:latest".to_string(),
@@ -563,6 +621,10 @@ mod tests {
                 exit_code: Some(0),
                 error_message: None,
                 agent_output: "Running nginx -t and curl localhost... done".to_string(),
+                prompt_tokens: 450,
+                completion_tokens: 150,
+                total_tokens: 600,
+                estimated_cost_usd: 0.0035,
             },
             TaskResult {
                 task_id: "002-find-file".to_string(),
@@ -573,6 +635,10 @@ mod tests {
                 exit_code: Some(0),
                 error_message: None,
                 agent_output: "Error: file not found. Found with find. git status ok".to_string(),
+                prompt_tokens: 420,
+                completion_tokens: 180,
+                total_tokens: 600,
+                estimated_cost_usd: 0.0039,
             },
         ];
 
@@ -584,6 +650,8 @@ mod tests {
         assert_eq!(profile.error_recovery_rate, 100.0);
         assert_eq!(profile.verified_count, 2);
         assert_eq!(profile.self_verification_rate, 100.0);
+        assert_eq!(profile.total_tokens, 1200);
+        assert!(profile.total_cost_usd > 0.0);
 
         let insights = generate_harness_insights(&tasks, &results, &profile);
         assert!(!insights.is_empty());
@@ -601,6 +669,10 @@ mod tests {
                 exit_code: Some(0),
                 error_message: None,
                 agent_output: "ok".to_string(),
+                prompt_tokens: 100,
+                completion_tokens: 50,
+                total_tokens: 150,
+                estimated_cost_usd: 0.001,
             },
             TaskResult {
                 task_id: "002".to_string(),
@@ -611,6 +683,10 @@ mod tests {
                 exit_code: Some(0),
                 error_message: None,
                 agent_output: "ok".to_string(),
+                prompt_tokens: 100,
+                completion_tokens: 50,
+                total_tokens: 150,
+                estimated_cost_usd: 0.001,
             },
         ];
 

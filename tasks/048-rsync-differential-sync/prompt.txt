@@ -1,0 +1,4 @@
+Perform an exact mirror synchronization from source directory /srv/data/ to destination directory /srv/backup/ using rsync. The synchronization must:
+1. Preserve permissions and timestamps (-a / archive mode).
+2. Delete extraneous files in /srv/backup/ that no longer exist in /srv/data/ (--delete).
+3. Ensure both directories have identical content.

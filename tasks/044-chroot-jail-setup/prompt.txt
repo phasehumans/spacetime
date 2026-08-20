@@ -1,0 +1,5 @@
+Set up a minimal chroot jail directory at /jail.
+1. Create /jail/bin, /jail/lib, and /jail/lib64 (or whatever lib directories are required by ldd /bin/sh).
+2. Copy /bin/sh (or /bin/dash) into /jail/bin/sh.
+3. Copy all shared library dependencies identified by 'ldd /bin/sh' into their matching directory paths inside /jail/.
+4. Ensure 'chroot /jail /bin/sh -c "exit 0"' executes successfully.

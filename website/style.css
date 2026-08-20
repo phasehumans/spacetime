@@ -298,7 +298,7 @@ main {
 
 .lb-row-header {
   display: grid;
-  grid-template-columns: 28px 1fr 88px 72px 78px;
+  grid-template-columns: 28px 1fr 88px 78px;
   gap: 12px;
   padding: 7px 4px 9px;
   color: var(--text-dim);
@@ -311,7 +311,7 @@ main {
 
 .lb-row {
   display: grid;
-  grid-template-columns: 28px 1fr 88px 72px 78px;
+  grid-template-columns: 28px 1fr 88px 78px;
   gap: 12px;
   align-items: center;
   padding: 8px 4px;

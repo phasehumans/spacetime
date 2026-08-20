@@ -1,0 +1,1 @@
+A multi-service docker-compose setup in /root/app fails to pass healthchecks because the web service cannot reach the cache service on its configured port and hostname. Fix the docker-compose.yml configuration so that 'docker-compose -f /root/app/docker-compose.yml config' is valid and the environment is properly configured.

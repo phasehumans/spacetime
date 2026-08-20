@@ -1,0 +1,1 @@
+A log file at /var/log/application.log contains both normal INFO messages and multi-line Python error tracebacks (starting with 'Traceback (most recent call last):' and ending with the Exception line). Extract all traceback blocks from /var/log/application.log and write them in order to /root/errors.log.
