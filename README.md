@@ -9,7 +9,7 @@ It executes agents inside isolated Docker containers to solve realistic Linux pr
 - **Simple Interactive CLI:** A step-by-step terminal wizard to pick your agent, choose models, and run benchmarks in seconds.
 
 ```bash
-curl -fsSL https://spacetime.trydecember.com | bash
+curl -fsSL https://spacetime.trydecember.com/install.sh | bash
 ```
 
 ```mermaid
