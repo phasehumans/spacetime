@@ -1,16 +1,48 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, anyhow};
+use include_dir::{include_dir, Dir};
+
 use crate::types::BenchmarkTask;
 
-pub fn load_all_tasks(tasks_dir: &Path) -> Result<Vec<BenchmarkTask>> {
-    if !tasks_dir.exists() {
-        return Err(anyhow!("Tasks directory '{}' does not exist", tasks_dir.display()));
+pub static EMBEDDED_TASKS: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/tasks");
+
+pub fn get_tasks_directory(requested_path: &Path) -> Result<PathBuf> {
+    if requested_path.exists() && requested_path != Path::new("") {
+        return Ok(requested_path.to_path_buf());
     }
 
+    let default_cache = get_default_tasks_cache_dir();
+    ensure_embedded_tasks_extracted(&default_cache)?;
+    Ok(default_cache)
+}
+
+pub fn get_default_tasks_cache_dir() -> PathBuf {
+    if let Ok(home) = std::env::var("HOME") {
+        PathBuf::from(home).join(".spacetime").join("tasks")
+    } else {
+        std::env::temp_dir().join("spacetime_tasks")
+    }
+}
+
+pub fn ensure_embedded_tasks_extracted(target_dir: &Path) -> Result<()> {
+    if !target_dir.exists() {
+        fs::create_dir_all(target_dir)
+            .with_context(|| format!("Failed to create tasks cache directory at {}", target_dir.display()))?;
+    }
+
+    EMBEDDED_TASKS.extract(target_dir)
+        .with_context(|| format!("Failed to extract embedded tasks into {}", target_dir.display()))?;
+
+    Ok(())
+}
+
+pub fn load_all_tasks(tasks_dir: &Path) -> Result<Vec<BenchmarkTask>> {
+    let resolved_dir = get_tasks_directory(tasks_dir)?;
+
     let mut tasks = Vec::new();
-    let entries = fs::read_dir(tasks_dir)
-        .with_context(|| format!("Failed to read tasks directory: {}", tasks_dir.display()))?;
+    let entries = fs::read_dir(&resolved_dir)
+        .with_context(|| format!("Failed to read tasks directory: {}", resolved_dir.display()))?;
 
     for entry in entries {
         let entry = entry?;
@@ -153,37 +185,38 @@ mod tests {
     #[test]
     fn test_load_all_tasks() {
         let tasks_dir = Path::new("tasks");
-        if tasks_dir.exists() {
-            let tasks = load_all_tasks(tasks_dir).expect("Failed to load tasks");
-            assert_eq!(tasks.len(), 20, "Expected 20 benchmark tasks");
-        }
+        let tasks = load_all_tasks(tasks_dir).expect("Failed to load tasks");
+        assert_eq!(tasks.len(), 20, "Expected 20 benchmark tasks");
+    }
+
+    #[test]
+    fn test_load_embedded_tasks_fallback() {
+        let nonexistent_dir = Path::new("/nonexistent_spacetime_tasks_dir_12345");
+        let tasks = load_all_tasks(nonexistent_dir).expect("Failed to load embedded tasks on fallback");
+        assert_eq!(tasks.len(), 20, "Expected 20 embedded tasks loaded from binary");
     }
 
     #[test]
     fn test_find_task_by_id_fuzzy() {
         let tasks_dir = Path::new("tasks");
-        if tasks_dir.exists() {
-            let t1 = find_task_by_id(tasks_dir, "001-nginx-config").unwrap();
-            assert_eq!(t1.id, "001-nginx-config");
+        let t1 = find_task_by_id(tasks_dir, "001-nginx-config").unwrap();
+        assert_eq!(t1.id, "001-nginx-config");
 
-            let t2 = find_task_by_id(tasks_dir, "001").unwrap();
-            assert_eq!(t2.id, "001-nginx-config");
+        let t2 = find_task_by_id(tasks_dir, "001").unwrap();
+        assert_eq!(t2.id, "001-nginx-config");
 
-            let t3 = find_task_by_id(tasks_dir, "nginx").unwrap();
-            assert_eq!(t3.id, "001-nginx-config");
-        }
+        let t3 = find_task_by_id(tasks_dir, "nginx").unwrap();
+        assert_eq!(t3.id, "001-nginx-config");
     }
 
     #[test]
     fn test_task_script_integrity() {
         let tasks_dir = Path::new("tasks");
-        if tasks_dir.exists() {
-            let tasks = load_all_tasks(tasks_dir).unwrap();
-            for t in tasks {
-                assert!(!t.prompt.is_empty(), "Task {} must have a prompt", t.id);
-                assert!(t.setup_script.exists(), "Task {} missing setup.sh", t.id);
-                assert!(t.test_script.exists(), "Task {} missing test.sh", t.id);
-            }
+        let tasks = load_all_tasks(tasks_dir).unwrap();
+        for t in tasks {
+            assert!(!t.prompt.is_empty(), "Task {} must have a prompt", t.id);
+            assert!(t.setup_script.exists(), "Task {} missing setup.sh", t.id);
+            assert!(t.test_script.exists(), "Task {} missing test.sh", t.id);
         }
     }
 

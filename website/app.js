@@ -93,8 +93,8 @@ function renderLeaderboard() {
           <span class="model-tag">${agent.model}</span>
         </div>
         <span class="col-num pass-val">${agent.passRate}</span>
-        <span class="col-num">${agent.passed}/${agent.total}</span>
-        <span class="col-num" style="color: var(--text-muted);">${agent.avgLatency}</span>
+        <span class="col-num col-hide-mobile">${agent.passed}/${agent.total}</span>
+        <span class="col-num col-hide-mobile" style="color: var(--text-muted);">${agent.avgLatency}</span>
       </div>
     `;
   }).join("");

@@ -21,3 +21,4 @@ anyhow = "1.0"
 dotenvy = "0.15"
 regex = "1.11"
 chrono = { version = "0.4", features = ["serde"] }
+include_dir = "0.7"
