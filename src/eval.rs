@@ -454,7 +454,7 @@ pub fn print_evaluation_summary(
             "{}  {:<26} {}",
             trunk("│"),
             white(cat_name),
-            muted(&format!("{:>2}/{} ({:>5.1}%)", passed, count, cat_rate))
+            muted(&format!("{:>2}/{} ({:.1}%)", passed, count, cat_rate))
         );
     }
 
