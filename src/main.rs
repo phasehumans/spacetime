@@ -22,7 +22,7 @@ use crate::tui::theme::{coral_red, muted, orange, print_banner, trunk, white};
 #[command(
     name = "spacetime",
     author = "Chaitanya",
-    version = "0.2.0",
+    version = "0.0.1",
     about = "An in-container benchmark arena for terminal AI agents (Claude Code, Gemini CLI, Aider, OpenHands, etc.)",
     long_about = "Spacetime evaluates AI agents by executing them directly inside hermetic Docker sandboxes on realistic Linux sysadmin and terminal tasks."
 )]
