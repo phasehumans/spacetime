@@ -402,12 +402,11 @@ pub fn run_wizard_navigation(
                             std::env::set_var("GOOGLE_API_KEY", trimmed_key);
                         }
 
-                        let masked_key = if trimmed_key.len() > 8 {
-                            format!(
-                                "{}...{}",
-                                &trimmed_key[..4],
-                                &trimmed_key[trimmed_key.len() - 4..]
-                            )
+                        let char_count = trimmed_key.chars().count();
+                        let masked_key = if char_count > 8 {
+                            let prefix: String = trimmed_key.chars().take(4).collect();
+                            let suffix: String = trimmed_key.chars().skip(char_count.saturating_sub(4)).collect();
+                            format!("{}...{}", prefix, suffix)
                         } else {
                             "***".to_string()
                         };

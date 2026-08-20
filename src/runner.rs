@@ -121,7 +121,9 @@ impl TaskRunner {
 
             on_stage(TaskStage::AgentRunning);
             let agent_cmd = agent_profile.build_in_container_cmd(&task.prompt);
-            let env_vars = agent_profile.get_environment_variables();
+            let mut env_vars = agent_profile.get_environment_variables();
+            env_vars.push(format!("SPACETIME_PROMPT={}", task.prompt));
+            env_vars.push(format!("PROMPT={}", task.prompt));
             let effective_timeout = timeout_override.unwrap_or(300);
 
             if !silent {
@@ -138,7 +140,7 @@ impl TaskRunner {
                 println!("\n{}", "--------------------------------------------------------".dimmed());
             }
 
-            agent_output = agent_res.stdout;
+            agent_output = crate::docker::scrub_secrets(&agent_res.stdout);
             agent_exit_code = Some(agent_res.exit_code);
 
             on_stage(TaskStage::EvaluatingTest);
@@ -159,7 +161,7 @@ impl TaskRunner {
         .await;
 
         if let Err(ref e) = eval_res {
-            error_message = Some(e.to_string());
+            error_message = Some(crate::docker::scrub_secrets(&e.to_string()));
             if !silent {
                 eprintln!("{}", format!("\n[Error] {}", e).bright_red());
             }
@@ -209,7 +211,8 @@ fn save_task_log(task_id: &str, agent_name: &str, output: &str, passed: bool) ->
 
     let status = if passed { "PASS" } else { "FAIL" };
     let log_file = log_dir.join(format!("{}_{}_{}.log", task_id, clean_agent, status));
-    fs::write(&log_file, output)
+    let scrubbed_output = crate::docker::scrub_secrets(output);
+    fs::write(&log_file, scrubbed_output)
         .with_context(|| format!("Failed to write log file: {}", log_file.display()))?;
     Ok(())
 }

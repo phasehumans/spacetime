@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -e
 
-crontab -l | grep -q "0 2 \* \* \* /backup.sh" || crontab -l | grep -q "0 2 \* \* \* root /backup.sh"
+crontab -l | grep -E -q '^[[:space:]]*0[[:space:]]+2[[:space:]]+\*[[:space:]]+\*[[:space:]]+\*[[:space:]]+(root[[:space:]]+)?/backup\.sh'

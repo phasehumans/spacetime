@@ -22,7 +22,7 @@ use crate::tui::theme::{coral_red, muted, orange, print_banner, trunk, white};
 #[command(
     name = "spacetime",
     author = "Chaitanya",
-    version = "0.0.1",
+    version = "0.0.2",
     about = "An in-container benchmark arena for terminal AI agents (Claude Code, Gemini CLI, Aider, OpenHands, etc.)",
     long_about = "Spacetime evaluates AI agents by executing them directly inside hermetic Docker sandboxes on realistic Linux sysadmin and terminal tasks."
 )]
@@ -82,6 +82,15 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
+
+    tokio::spawn(async {
+        if tokio::signal::ctrl_c().await.is_ok() {
+            eprintln!("\nReceived Ctrl+C / SIGINT. Cleaning up active sandbox containers...");
+            crate::docker::cleanup_all_active_containers().await;
+            crate::tui::theme::show_cursor();
+            std::process::exit(130);
+        }
+    });
 
     let cli = Cli::parse();
     let tasks_dir = &cli.tasks_dir;
@@ -171,7 +180,7 @@ async fn clean_sandbox_containers() -> Result<()> {
                     "{}  {} {}",
                     trunk("│"),
                     coral_red("removed:"),
-                    muted(&id[..12.min(id.len())])
+                    muted(&id.chars().take(12).collect::<String>())
                 );
             }
         }

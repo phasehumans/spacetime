@@ -72,8 +72,8 @@ pub async fn run_benchmark_suite(
             let status_badge = coral_red("fail");
             let err_snippet = if let Some(ref err) = result.error_message {
                 let clean = err.lines().next().unwrap_or("failed");
-                if clean.len() > 36 {
-                    format!("{}...", &clean[..33])
+                if clean.chars().count() > 36 {
+                    format!("{}...", clean.chars().take(33).collect::<String>())
                 } else {
                     clean.to_string()
                 }
@@ -345,11 +345,11 @@ pub fn print_evaluation_summary(
     let fastest_task = suite_result
         .results
         .iter()
-        .min_by(|a, b| a.duration_secs.partial_cmp(&b.duration_secs).unwrap());
+        .min_by(|a, b| a.duration_secs.total_cmp(&b.duration_secs));
     let slowest_task = suite_result
         .results
         .iter()
-        .max_by(|a, b| a.duration_secs.partial_cmp(&b.duration_secs).unwrap());
+        .max_by(|a, b| a.duration_secs.total_cmp(&b.duration_secs));
 
     println!("{}", trunk("│"));
     println!("{}  {}", orange("✱"), white("performance metrics:"));
@@ -587,5 +587,47 @@ mod tests {
 
         let insights = generate_harness_insights(&tasks, &results, &profile);
         assert!(!insights.is_empty());
+    }
+
+    #[test]
+    fn test_nan_float_total_cmp() {
+        let results = [
+            TaskResult {
+                task_id: "001".to_string(),
+                task_name: "T1".to_string(),
+                passed: true,
+                duration_secs: f64::NAN,
+                agent_name: "A".to_string(),
+                exit_code: Some(0),
+                error_message: None,
+                agent_output: "ok".to_string(),
+            },
+            TaskResult {
+                task_id: "002".to_string(),
+                task_name: "T2".to_string(),
+                passed: true,
+                duration_secs: 5.0,
+                agent_name: "A".to_string(),
+                exit_code: Some(0),
+                error_message: None,
+                agent_output: "ok".to_string(),
+            },
+        ];
+
+        let fastest = results.iter().min_by(|a, b| a.duration_secs.total_cmp(&b.duration_secs));
+        let slowest = results.iter().max_by(|a, b| a.duration_secs.total_cmp(&b.duration_secs));
+        assert!(fastest.is_some());
+        assert!(slowest.is_some());
+    }
+
+    #[test]
+    fn test_multibyte_unicode_slicing_safety() {
+        let clean = "🚀 异常错误: 这是一个非常长的中文字符串测试，用于确保不会因为字节截断而崩溃！";
+        let formatted = if clean.chars().count() > 36 {
+            format!("{}...", clean.chars().take(33).collect::<String>())
+        } else {
+            clean.to_string()
+        };
+        assert!(formatted.ends_with("..."));
     }
 }

@@ -598,8 +598,9 @@ impl AgentProfile {
                     custom_name.clone()
                 } else if let Some(cmd) = &self.custom_cmd {
                     let trimmed = cmd.trim();
-                    if trimmed.len() > 30 {
-                        format!("Custom ({}...)", &trimmed[..27])
+                    if trimmed.chars().count() > 30 {
+                        let truncated: String = trimmed.chars().take(27).collect();
+                        format!("Custom ({}...)", truncated)
                     } else {
                         format!("Custom ({})", trimmed)
                     }
@@ -610,147 +611,145 @@ impl AgentProfile {
         }
     }
 
-    pub fn build_in_container_cmd(&self, prompt: &str) -> String {
-        let escaped_prompt = prompt
-            .replace('\\', "\\\\")
-            .replace('"', "\\\"")
-            .replace('$', "\\$")
-            .replace('`', "\\`");
+    pub fn build_in_container_cmd(&self, _prompt: &str) -> String {
         match &self.harness {
             HarnessType::ClaudeCode => {
                 if let Some(model) = &self.model {
                     format!(
-                        "claude -p \"{}\" --model \"{}\" --dangerously-skip-permissions",
-                        escaped_prompt, model
+                        "claude -p \"$SPACETIME_PROMPT\" --model \"{}\" --dangerously-skip-permissions",
+                        model
                     )
                 } else {
-                    format!("claude -p \"{}\" --dangerously-skip-permissions", escaped_prompt)
+                    "claude -p \"$SPACETIME_PROMPT\" --dangerously-skip-permissions".to_string()
                 }
             }
             HarnessType::GeminiCli => {
                 if let Some(model) = &self.model {
                     format!(
-                        "gemini --prompt \"{}\" --model \"{}\" --yes --headless",
-                        escaped_prompt, model
+                        "gemini --prompt \"$SPACETIME_PROMPT\" --model \"{}\" --yes --headless",
+                        model
                     )
                 } else {
-                    format!("gemini --prompt \"{}\" --yes --headless", escaped_prompt)
+                    "gemini --prompt \"$SPACETIME_PROMPT\" --yes --headless".to_string()
                 }
             }
             HarnessType::Antigravity => {
                 if let Some(model) = &self.model {
                     format!(
-                        "agy --prompt \"{}\" --model \"{}\" --yes",
-                        escaped_prompt, model
+                        "agy --prompt \"$SPACETIME_PROMPT\" --model \"{}\" --yes",
+                        model
                     )
                 } else {
-                    format!("agy --prompt \"{}\" --yes", escaped_prompt)
+                    "agy --prompt \"$SPACETIME_PROMPT\" --yes".to_string()
                 }
             }
             HarnessType::Codex => {
                 if let Some(model) = &self.model {
                     format!(
-                        "codex run --prompt \"{}\" --model \"{}\"",
-                        escaped_prompt, model
+                        "codex run --prompt \"$SPACETIME_PROMPT\" --model \"{}\"",
+                        model
                     )
                 } else {
-                    format!("codex run --prompt \"{}\"", escaped_prompt)
+                    "codex run --prompt \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::Aider => {
                 if let Some(model) = &self.model {
                     format!(
-                        "aider --model \"{}\" --message \"{}\" --yes --no-git --no-auto-commits",
-                        model, escaped_prompt
+                        "aider --model \"{}\" --message \"$SPACETIME_PROMPT\" --yes --no-git --no-auto-commits",
+                        model
                     )
                 } else {
-                    format!(
-                        "aider --message \"{}\" --yes --no-git --no-auto-commits",
-                        escaped_prompt
-                    )
+                    "aider --message \"$SPACETIME_PROMPT\" --yes --no-git --no-auto-commits".to_string()
                 }
             }
             HarnessType::Devin => {
-                format!("devin run --prompt \"{}\"", escaped_prompt)
+                "devin run --prompt \"$SPACETIME_PROMPT\"".to_string()
             }
             HarnessType::December => {
                 if let Some(model) = &self.model {
-                    format!("december run --prompt \"{}\" --model \"{}\" --headless", escaped_prompt, model)
+                    format!("december run --prompt \"$SPACETIME_PROMPT\" --model \"{}\" --headless", model)
                 } else {
-                    format!("december run --prompt \"{}\" --headless", escaped_prompt)
+                    "december run --prompt \"$SPACETIME_PROMPT\" --headless".to_string()
                 }
             }
             HarnessType::Pi => {
-                format!("pi query \"{}\"", escaped_prompt)
+                "pi query \"$SPACETIME_PROMPT\"".to_string()
             }
             HarnessType::CursorCli => {
                 if let Some(model) = &self.model {
-                    format!("cursor-agent --message \"{}\" --model \"{}\"", escaped_prompt, model)
+                    format!("cursor-agent --message \"$SPACETIME_PROMPT\" --model \"{}\"", model)
                 } else {
-                    format!("cursor-agent --message \"{}\"", escaped_prompt)
+                    "cursor-agent --message \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::SweAgent => {
                 if let Some(model) = &self.model {
                     format!(
-                        "sweagent run --problem_statement \"{}\" --model_name \"{}\"",
-                        escaped_prompt, model
+                        "sweagent run --problem_statement \"$SPACETIME_PROMPT\" --model_name \"{}\"",
+                        model
                     )
                 } else {
-                    format!("sweagent run --problem_statement \"{}\"", escaped_prompt)
+                    "sweagent run --problem_statement \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::OpenHands => {
                 if let Some(model) = &self.model {
-                    format!("openhands --model \"{}\" --task \"{}\"", model, escaped_prompt)
+                    format!("openhands --model \"{}\" --task \"$SPACETIME_PROMPT\"", model)
                 } else {
-                    format!("openhands --task \"{}\"", escaped_prompt)
+                    "openhands --task \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::Goose => {
                 if let Some(model) = &self.model {
-                    format!("goose run --instruction \"{}\" --model \"{}\"", escaped_prompt, model)
+                    format!("goose run --instruction \"$SPACETIME_PROMPT\" --model \"{}\"", model)
                 } else {
-                    format!("goose run --instruction \"{}\"", escaped_prompt)
+                    "goose run --instruction \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::Plandex => {
                 if let Some(model) = &self.model {
-                    format!("plandex prompt \"{}\" --model \"{}\" --auto-apply", escaped_prompt, model)
+                    format!("plandex prompt \"$SPACETIME_PROMPT\" --model \"{}\" --auto-apply", model)
                 } else {
-                    format!("plandex prompt \"{}\" --auto-apply", escaped_prompt)
+                    "plandex prompt \"$SPACETIME_PROMPT\" --auto-apply".to_string()
                 }
             }
             HarnessType::Cline => {
                 if let Some(model) = &self.model {
-                    format!("cline run \"{}\" --model \"{}\"", escaped_prompt, model)
+                    format!("cline run \"$SPACETIME_PROMPT\" --model \"{}\"", model)
                 } else {
-                    format!("cline run \"{}\"", escaped_prompt)
+                    "cline run \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::Smolagents => {
                 if let Some(model) = &self.model {
-                    format!("python3 -m smolagents.run --prompt \"{}\" --model-id \"{}\"", escaped_prompt, model)
+                    format!("python3 -m smolagents.run --prompt \"$SPACETIME_PROMPT\" --model-id \"{}\"", model)
                 } else {
-                    format!("python3 -m smolagents.run --prompt \"{}\"", escaped_prompt)
+                    "python3 -m smolagents.run --prompt \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::Mentat => {
                 if let Some(model) = &self.model {
-                    format!("mentat --prompt \"{}\" --model \"{}\" --auto", escaped_prompt, model)
+                    format!("mentat --prompt \"$SPACETIME_PROMPT\" --model \"{}\" --auto", model)
                 } else {
-                    format!("mentat --prompt \"{}\" --auto", escaped_prompt)
+                    "mentat --prompt \"$SPACETIME_PROMPT\" --auto".to_string()
                 }
             }
             HarnessType::Custom => {
                 if let Some(template) = &self.custom_cmd {
-                    if template.contains("{prompt}") {
-                        template.replace("{prompt}", &escaped_prompt)
+                    if template.contains("\"{prompt}\"") {
+                        template.replace("\"{prompt}\"", "\"$SPACETIME_PROMPT\"")
+                    } else if template.contains("'{prompt}'") {
+                        template.replace("'{prompt}'", "\"$SPACETIME_PROMPT\"")
+                    } else if template.contains("{prompt}") {
+                        template.replace("{prompt}", "\"$SPACETIME_PROMPT\"")
+                    } else if template.contains("$SPACETIME_PROMPT") {
+                        template.clone()
                     } else {
-                        format!("{} \"{}\"", template, escaped_prompt)
+                        format!("{} \"$SPACETIME_PROMPT\"", template)
                     }
                 } else {
-                    format!("echo \"{}\"", escaped_prompt)
+                    "echo \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
         }
@@ -806,6 +805,9 @@ impl AgentProfile {
             "CI=true".to_string(),
             "TERM=xterm-256color".to_string(),
             "DEBIAN_FRONTEND=noninteractive".to_string(),
+            "USER=agent".to_string(),
+            "HOME=/home/agent".to_string(),
+            "LOGNAME=agent".to_string(),
         ];
 
         let api_keys = [
@@ -870,7 +872,7 @@ mod tests {
             Some("claude-3-7-sonnet-20250219".to_string()),
         );
         let cmd = profile.build_in_container_cmd("Fix nginx config");
-        assert!(cmd.contains("claude -p \"Fix nginx config\""));
+        assert!(cmd.contains("claude -p \"$SPACETIME_PROMPT\""));
         assert!(cmd.contains("--model \"claude-3-7-sonnet-20250219\""));
         assert!(cmd.contains("--dangerously-skip-permissions"));
 
@@ -879,6 +881,10 @@ mod tests {
             Some("gpt-4o".to_string()),
         );
         let codex_cmd = codex_profile.build_in_container_cmd("Fix issue");
-        assert!(codex_cmd.contains("codex run"));
+        assert!(codex_cmd.contains("codex run --prompt \"$SPACETIME_PROMPT\""));
+
+        let custom_profile = AgentProfile::custom("python3 /workspace/agent.py {prompt}".to_string());
+        let custom_cmd = custom_profile.build_in_container_cmd("Fix bug; rm -rf /");
+        assert_eq!(custom_cmd, "python3 /workspace/agent.py \"$SPACETIME_PROMPT\"");
     }
 }

@@ -88,8 +88,8 @@ pub async fn execute_benchmark_suite_tui(
             let status_badge = coral_red("fail");
             let err_snippet = if let Some(err) = &result.error_message {
                 let clean = err.lines().next().unwrap_or("failed");
-                if clean.len() > 36 {
-                    format!("{}...", &clean[..33])
+                if clean.chars().count() > 36 {
+                    format!("{}...", clean.chars().take(33).collect::<String>())
                 } else {
                     clean.to_string()
                 }

@@ -2,4 +2,5 @@
 set -e
 
 apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y netcat-openbsd net-tools psmisc
-nc -l 8080 >/dev/null 2>&1 &
+nohup nc -k -l 8080 </dev/null >/dev/null 2>&1 &
+sleep 1

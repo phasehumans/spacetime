@@ -25,7 +25,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ripgrep \
     tmux \
     unzip \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
+
+# Create non-root agent user with passwordless sudo
+RUN useradd -m -s /bin/bash -u 1000 agent \
+    && echo "agent ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    && chown -R agent:agent /home/agent
 
 # 2. Install Node.js LTS (v20)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
@@ -36,5 +42,5 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 RUN npm install -g @anthropic-ai/claude-code || true
 RUN pip3 install --no-cache-dir aider-chat || true
 
-WORKDIR /root
+WORKDIR /home/agent
 CMD ["/bin/sh", "-c", "sleep infinity"]

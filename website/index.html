@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='50%' y='53%' dominant-baseline='middle' text-anchor='middle' font-size='31' fill='%23fb923c' font-family='system-ui, -apple-system, sans-serif'>✱</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,7 +22,7 @@
       <div class="header-links">
         <a href="mailto:team@trydecember.com" class="link">email</a>
         <a href="https://github.com/phasehumans" target="_blank" class="link">github</a>
-        <a href="https://npmjs.com/package/@trydecember/cli" target="_blank" class="link accent-link">visit december</a>
+        <a href="https://npmjs.com/package/@trydecember/cli" target="_blank" class="link accent-link">@trydecember/cli</a>
       </div>
     </header>
 
@@ -51,13 +51,13 @@
         </div>
 
         <div class="section-block">
-          <div class="content-title">harness lifecycle</div>
+          <div class="content-title">how it works</div>
           <div class="flow-steps">
-            <div class="flow-step"><span class="num">01</span><span>spin fresh, isolated docker sandbox per task</span></div>
-            <div class="flow-step"><span class="num">02</span><span>spawn agent cli & stream interactive bash session</span></div>
-            <div class="flow-step"><span class="num">03</span><span>run automated test.sh ground-truth validation</span></div>
-            <div class="flow-step"><span class="num">04</span><span>calculate pass rates, latency & telemetry</span></div>
-            <div class="flow-step"><span class="num">05</span><span>purge container & export evaluation scorecard</span></div>
+            <div class="flow-step"><span class="num">01</span><span>starts a fresh, isolated docker container</span></div>
+            <div class="flow-step"><span class="num">02</span><span>gives the agent terminal access to fix the task</span></div>
+            <div class="flow-step"><span class="num">03</span><span>streams live terminal output in real time</span></div>
+            <div class="flow-step"><span class="num">04</span><span>runs automated tests to verify the solution</span></div>
+            <div class="flow-step"><span class="num">05</span><span>cleans up and generates the final scorecard</span></div>
           </div>
         </div>
       </div>
@@ -65,7 +65,7 @@
       <div class="right-col">
         <div class="lb-header">
           <span class="lb-title">leaderboard</span>
-          <span class="lb-meta">top 10 • 20 tasks • pass@1</span>
+          <a href="https://github.com/phasehumans/spacetime#readme" target="_blank" class="lb-meta">view detailed evaluations</a>
         </div>
 
         <div class="lb-list">
@@ -76,7 +76,108 @@
             <span class="col-num col-hide-mobile">solved</span>
             <span class="col-num col-hide-mobile">time</span>
           </div>
-          <div id="leaderboard-body"></div>
+          <div id="leaderboard-body">
+            <div class="lb-row">
+              <span class="rank-val">1</span>
+              <div class="model-val">
+                <span>claude code</span>
+                <span class="model-tag">claude-3-7-sonnet</span>
+              </div>
+              <span class="col-num pass-val">90.0%</span>
+              <span class="col-num col-hide-mobile">18/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">2.4s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">2</span>
+              <div class="model-val">
+                <span>codex cli</span>
+                <span class="model-tag">o3-mini</span>
+              </div>
+              <span class="col-num pass-val">85.0%</span>
+              <span class="col-num col-hide-mobile">17/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">3.1s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">3</span>
+              <div class="model-val">
+                <span>antigravity</span>
+                <span class="model-tag">gemini-2.5-pro</span>
+              </div>
+              <span class="col-num pass-val">80.0%</span>
+              <span class="col-num col-hide-mobile">16/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">1.9s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">4</span>
+              <div class="model-val">
+                <span>cursor cli</span>
+                <span class="model-tag">claude-3-5-sonnet</span>
+              </div>
+              <span class="col-num pass-val">80.0%</span>
+              <span class="col-num col-hide-mobile">16/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">2.8s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">5</span>
+              <div class="model-val">
+                <span>openhands</span>
+                <span class="model-tag">deepseek-r1</span>
+              </div>
+              <span class="col-num pass-val">75.0%</span>
+              <span class="col-num col-hide-mobile">15/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">4.8s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">6</span>
+              <div class="model-val">
+                <span>aider</span>
+                <span class="model-tag">claude-3-5-sonnet</span>
+              </div>
+              <span class="col-num pass-val">70.0%</span>
+              <span class="col-num col-hide-mobile">14/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">3.6s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">7</span>
+              <div class="model-val">
+                <span>december</span>
+                <span class="model-tag">claude-3-7-sonnet</span>
+              </div>
+              <span class="col-num pass-val">70.0%</span>
+              <span class="col-num col-hide-mobile">14/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">2.1s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">8</span>
+              <div class="model-val">
+                <span>devin</span>
+                <span class="model-tag">gpt-4o</span>
+              </div>
+              <span class="col-num pass-val">65.0%</span>
+              <span class="col-num col-hide-mobile">13/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">3.5s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">9</span>
+              <div class="model-val">
+                <span>swe-agent</span>
+                <span class="model-tag">qwen-2.5-72b</span>
+              </div>
+              <span class="col-num pass-val">65.0%</span>
+              <span class="col-num col-hide-mobile">13/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">5.2s</span>
+            </div>
+            <div class="lb-row">
+              <span class="rank-val">10</span>
+              <div class="model-val">
+                <span>pi</span>
+                <span class="model-tag">deepseek-v3</span>
+              </div>
+              <span class="col-num pass-val">60.0%</span>
+              <span class="col-num col-hide-mobile">12/20</span>
+              <span class="col-num col-hide-mobile" style="color: var(--text-muted);">3.8s</span>
+            </div>
+          </div>
         </div>
       </div>
     </main>
