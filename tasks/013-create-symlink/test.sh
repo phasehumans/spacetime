@@ -2,4 +2,4 @@
 set -e
 
 test -L /opt/app/current
-readlink /opt/app/current | grep -q "v1.0"\n
+readlink /opt/app/current | grep -q "v1.0"

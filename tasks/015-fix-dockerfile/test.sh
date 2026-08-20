@@ -2,4 +2,4 @@
 set -e
 
 grep -q "RUN echo hello" /project/Dockerfile
-! grep -q "RUNN" /project/Dockerfile\n
+! grep -q "RUNN" /project/Dockerfile

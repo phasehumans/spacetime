@@ -30,15 +30,18 @@ pub async fn ensure_sandbox_image(image_tag: &str, force_rebuild: bool) -> Resul
 
     println!(
         "{}",
-        format!("⚙ Sandbox image '{}' not found or rebuild requested. Building...", image_tag).yellow()
+        format!("Sandbox image '{}' not found or rebuild requested. Building...", image_tag).yellow()
     );
 
-    let dockerfile = "Dockerfile.sandbox";
-    if !Path::new(dockerfile).exists() {
+    let dockerfile = if Path::new("Dockerfile").exists() {
+        "Dockerfile"
+    } else if Path::new("Dockerfile.sandbox").exists() {
+        "Dockerfile.sandbox"
+    } else {
         return Err(anyhow!(
-            "Dockerfile.sandbox not found in current directory. Cannot build sandbox."
+            "Dockerfile not found in current directory. Cannot build sandbox."
         ));
-    }
+    };
 
     let spinner = create_spinner("Building Docker sandbox image (this may take ~1-2 min on first run)...");
 
@@ -79,11 +82,6 @@ pub struct EnvironmentManager {
 }
 
 impl EnvironmentManager {
-    #[allow(dead_code)]
-    pub fn new(image: String) -> Result<Self> {
-        Self::with_mount(image, None)
-    }
-
     pub fn with_mount(image: String, mount_dir: Option<String>) -> Result<Self> {
         let docker = Docker::connect_with_local_defaults()
             .with_context(|| "Failed to connect to local Docker daemon. Is Docker running?")?;
@@ -93,11 +91,6 @@ impl EnvironmentManager {
             image,
             mount_dir,
         })
-    }
-
-    #[allow(dead_code)]
-    pub fn get_container_id(&self) -> Option<&str> {
-        self.container_id.as_deref()
     }
 
     pub async fn initialize(&mut self) -> Result<()> {

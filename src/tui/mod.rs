@@ -1,4 +1,3 @@
-pub mod harness;
 pub mod runner;
 pub mod tasks;
 pub mod theme;

@@ -2,4 +2,4 @@
 set -e
 
 grep -q "banana" /diff.txt
-! grep -q "apple" /diff.txt\n
+! grep -q "apple" /diff.txt
