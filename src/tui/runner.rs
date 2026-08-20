@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -7,8 +6,8 @@ use chrono::Utc;
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::agent::AgentProfile;
+use crate::eval::{compute_intelligence_profile, generate_harness_insights, print_evaluation_summary};
 use crate::runner::{TaskRunner, TaskStage};
-use crate::tui::tasks::get_task_category_tag;
 use crate::tui::theme::{
     coral_red, mint_green, muted, orange, trunk, white,
 };
@@ -27,8 +26,8 @@ pub async fn execute_benchmark_suite_tui(
     let agent_name = agent_profile.name();
 
     println!(
-        "{} {}",
-        orange("◐"),
+        "{}  {}",
+        orange("✱"),
         white(&format!("running benchmark suite ({} tasks)", total_tasks))
     );
     println!("{}", trunk("│"));
@@ -77,7 +76,7 @@ pub async fn execute_benchmark_suite_tui(
         spinner.finish_and_clear();
 
         if result.passed {
-            let status_badge = format!("{} {}", mint_green("●"), mint_green("pass"));
+            let status_badge = mint_green("pass");
             println!(
                 "{} {} {:<24} {}",
                 trunk(&format!("│  {}", prefix)),
@@ -86,7 +85,7 @@ pub async fn execute_benchmark_suite_tui(
                 muted(&format!("({:.1}s)", result.duration_secs))
             );
         } else {
-            let status_badge = format!("{} {}", coral_red("●"), coral_red("fail"));
+            let status_badge = coral_red("fail");
             let err_snippet = if let Some(err) = &result.error_message {
                 let clean = err.lines().next().unwrap_or("failed");
                 if clean.len() > 36 {
@@ -120,159 +119,23 @@ pub async fn execute_benchmark_suite_tui(
         0.0
     };
 
-    println!("{}", trunk("│"));
-    let pass_str = format!("{} {} passed", mint_green("●"), passed_tasks);
-    let fail_str = if failed_tasks > 0 {
-        format!("{} {} failed", coral_red("●"), failed_tasks)
-    } else {
-        format!("0 failed")
-    };
-
-    println!(
-        "{} {} {} {} {} {}",
-        orange("✱"),
-        white("evaluation summary:"),
-        mint_green(&pass_str),
-        muted(","),
-        coral_red(&fail_str),
-        muted(&format!("({:.1}% pass rate)", pass_rate))
-    );
-    println!(
-        "{} {}",
-        trunk("│"),
-        muted(&format!(
-            "total duration: {:.1}s | avg duration: {:.1}s/task",
-            total_duration,
-            if total_tasks > 0 {
-                total_duration / total_tasks as f64
-            } else {
-                0.0
-            }
-        ))
-    );
-
-    // Category breakdown
-    let mut category_map: BTreeMap<&'static str, (usize, usize)> = BTreeMap::new();
-    for (t, r) in tasks.iter().zip(results.iter()) {
-        let tag = get_task_category_tag(&t.id);
-        let entry = category_map.entry(tag).or_insert((0, 0));
-        entry.0 += if r.passed { 1 } else { 0 };
-        entry.1 += 1;
-    }
-
-    println!("{}", trunk("│"));
-    println!("{} {}", orange("✱"), white("category breakdown:"));
-    for (tag, (passed, count)) in category_map {
-        let cat_rate = (passed as f64 / count as f64) * 100.0;
-        let cat_name = match tag {
-            "[net]" => "network & services",
-            "[git]" => "git & versioning",
-            "[sec]" => "security & perms",
-            "[data]" => "data & formatting",
-            "[fs]" => "filesystem operations",
-            "[dev]" => "dev & environments",
-            "[logs]" => "log analysis",
-            _ => "general terminal tasks",
-        };
-        let mut bar = String::new();
-        for i in 0..count {
-            if i < passed {
-                bar.push_str(&mint_green("●"));
-            } else {
-                bar.push_str(&coral_red("○"));
-            }
-        }
-        println!(
-            "{} {:<6} {:<22} {:>2}/{} ({:>5.1}%)  {}",
-            trunk("│"),
-            orange(tag),
-            white(cat_name),
-            passed,
-            count,
-            cat_rate,
-            bar
-        );
-    }
-
-    // Failure Diagnostics
-    let failed_results: Vec<(&BenchmarkTask, &TaskResult)> = tasks
-        .iter()
-        .zip(results.iter())
-        .filter(|(_, r)| !r.passed)
-        .collect();
-
-    if !failed_results.is_empty() {
-        println!("{}", trunk("│"));
-        println!("{} {}", orange("✱"), white("failure diagnostics:"));
-        let num_failed = failed_results.len();
-
-        for (idx, (t, r)) in failed_results.iter().enumerate() {
-            let is_last_fail = idx == num_failed - 1;
-            let branch = if is_last_fail { "└─" } else { "├─" };
-            let sub_pipe = if is_last_fail { "  " } else { "│ " };
-
-            let (reason, detail) = if let Some(ref err) = r.error_message {
-                if err.to_lowercase().contains("timeout") {
-                    (
-                        "⏱ Timeout",
-                        format!("exceeded timeout limit ({:.1}s)", r.duration_secs),
-                    )
-                } else if err.to_lowercase().contains("setup.sh") {
-                    ("⚙ Setup Script Failed", err.clone())
-                } else if err.to_lowercase().contains("api_key")
-                    || err.to_lowercase().contains("401")
-                {
-                    ("⚠ API Key / Auth Error", err.clone())
-                } else {
-                    ("✗ Test Assertion Failed", err.clone())
-                }
-            } else {
-                (
-                    "✗ Test Assertion Failed",
-                    "test.sh returned non-zero exit code".to_string(),
-                )
-            };
-
-            let clean_agent = agent_name.replace([' ', '(', ')', '/', '\\', ':'], "_");
-            let log_path = format!("results/logs/{}_{}_FAIL.log", t.id, clean_agent);
-
-            println!("{} {} {}", trunk("│"), trunk(branch), white(&t.id));
-            println!(
-                "{} {} reason: {}",
-                trunk("│"),
-                trunk(sub_pipe),
-                coral_red(reason)
-            );
-            println!(
-                "{} {} detail: {}",
-                trunk("│"),
-                trunk(sub_pipe),
-                muted(&detail)
-            );
-            println!(
-                "{} {} log:    {}",
-                trunk("│"),
-                trunk(sub_pipe),
-                muted(&log_path)
-            );
-            if !is_last_fail {
-                println!("{} {}", trunk("│"), trunk(sub_pipe));
-            }
-        }
-    }
+    let intelligence_profile = compute_intelligence_profile(&tasks, &results);
+    let harness_insights = generate_harness_insights(&tasks, &results, &intelligence_profile);
 
     let suite_result = BenchmarkSuiteResult {
         timestamp,
         agent: agent_name,
+        sandbox: sandbox_image,
         total_tasks,
         passed_tasks,
         failed_tasks,
         pass_rate,
         total_duration_secs: total_duration,
         results,
+        intelligence_profile: Some(intelligence_profile),
+        harness_insights,
     };
 
-    // Save JSON report
     let export_file = output_path.unwrap_or_else(|| {
         let results_dir = Path::new("results");
         if !results_dir.exists() {
@@ -293,13 +156,7 @@ pub async fn execute_benchmark_suite_tui(
     fs::write(&export_file, json_bytes)
         .with_context(|| format!("Failed to write results file to {}", export_file.display()))?;
 
-    println!("{}", trunk("│"));
-    println!(
-        "{} {}",
-        trunk("│  report saved to:"),
-        white(&export_file.display().to_string())
-    );
-    println!("{}", trunk("│"));
+    print_evaluation_summary(&suite_result, &tasks, &export_file);
 
     Ok(suite_result)
 }

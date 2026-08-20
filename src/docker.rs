@@ -65,7 +65,7 @@ pub async fn ensure_sandbox_image(image_tag: &str, force_rebuild: bool) -> Resul
 
     println!(
         "{}",
-        format!("✓ Sandbox image '{}' built successfully!", image_tag).green()
+        format!("Sandbox image '{}' built successfully", image_tag).green()
     );
 
     Ok(())

@@ -16,7 +16,6 @@ pub fn load_all_tasks(tasks_dir: &Path) -> Result<Vec<BenchmarkTask>> {
         let entry = entry?;
         let path = entry.path();
         if path.is_dir() {
-            // Check if directory contains meta.sh or prompt.txt
             if path.join("prompt.txt").exists() || path.join("meta.sh").exists() {
                 match load_task_from_dir(&path) {
                     Ok(task) => tasks.push(task),
@@ -28,7 +27,6 @@ pub fn load_all_tasks(tasks_dir: &Path) -> Result<Vec<BenchmarkTask>> {
         }
     }
 
-    // Sort tasks alphabetically by id
     tasks.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(tasks)
 }
@@ -36,12 +34,10 @@ pub fn load_all_tasks(tasks_dir: &Path) -> Result<Vec<BenchmarkTask>> {
 pub fn find_task_by_id(tasks_dir: &Path, id_query: &str) -> Result<BenchmarkTask> {
     let tasks = load_all_tasks(tasks_dir)?;
     
-    // Exact match
     if let Some(task) = tasks.iter().find(|t| t.id == id_query) {
         return Ok(task.clone());
     }
 
-    // Match by prefix or partial slug (e.g., "001", "task-001", "nginx")
     let clean_query = id_query.trim_start_matches("task-");
     let matches: Vec<_> = tasks
         .iter()
@@ -57,7 +53,6 @@ pub fn find_task_by_id(tasks_dir: &Path, id_query: &str) -> Result<BenchmarkTask
     }
 
     if matches.len() > 1 {
-        // Prefer exact prefix match
         if let Some(exact_prefix) = matches.iter().find(|t| t.id.starts_with(clean_query)) {
             return Ok((*exact_prefix).clone());
         }

@@ -1,13 +1,5 @@
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 
-// Exact theme color hex tokens
-// Orange: #FB923C (Primary step icon ✱, spinner ◐, category tags)
-// Mint Green: #6EE7B7 (December TUI success ● pass)
-// Coral Red: #FCA5A5 (December TUI error ● fail)
-// Soft Off-White: #E4E4E7 (Warm, glare-free readable text)
-// Muted Grey: #71717A (Secondary descriptions, shortcuts, brackets)
-// Dark Trunk Grey: #3F3F46 (Connecting tree lines │, ├─, └)
-
 pub const ANSI_ORANGE: &str = "\x1b[38;2;251;146;60m";
 pub const ANSI_MINT_GREEN: &str = "\x1b[38;2;110;231;183m";
 pub const ANSI_CORAL_RED: &str = "\x1b[38;2;252;165;165m";
@@ -46,7 +38,7 @@ pub fn trunk(text: &str) -> String {
 }
 
 pub fn breadcrumb(label: &str, value: &str) -> String {
-    format!("{}  {} › {}", muted("✱"), muted(label), white(value))
+    format!("{}  {} {}", orange("✱"), white(&format!("{} ›", label)), muted(value))
 }
 
 pub fn print_breadcrumb(label: &str, value: &str) {
@@ -100,7 +92,6 @@ pub fn multiselect_help_message() -> String {
     )
 }
 
-/// Builds the custom Inquire RenderConfig matching the Spacetime Clack theme
 pub fn get_spacetime_render_config() -> RenderConfig<'static> {
     let mut config = RenderConfig::empty();
 
@@ -108,24 +99,19 @@ pub fn get_spacetime_render_config() -> RenderConfig<'static> {
     let grey_col = Color::rgb(113, 113, 122);
     let white_col = Color::rgb(228, 228, 231);
 
-    // Prompt prefix: soft orange ✱
-    config.prompt_prefix = Styled::new("✱").with_fg(orange_col);
-    config.answered_prompt_prefix = Styled::new("✱").with_fg(grey_col);
+    config.prompt_prefix = Styled::new("✱ ").with_fg(orange_col);
+    config.answered_prompt_prefix = Styled::new("✱ ").with_fg(grey_col);
 
-    // Select markers: clean ❭ cursor in soft orange (matching ✱)
     config.highlighted_option_prefix = Styled::new("❭").with_fg(orange_col);
     config.option = StyleSheet::new().with_fg(white_col);
     config.selected_option = Some(StyleSheet::new().with_fg(orange_col));
 
-    // Checkbox markers for multi-select
     config.selected_checkbox = Styled::new("[x] ").with_fg(white_col);
     config.unselected_checkbox = Styled::new("[ ] ").with_fg(grey_col);
 
-    // Scroll indicators: single space so no arrow icons appear
     config.scroll_up_prefix = Styled::new(" ");
     config.scroll_down_prefix = Styled::new(" ");
 
-    // Help message in muted grey (brackets and action text)
     config.help_message = StyleSheet::new().with_fg(grey_col);
     config.default_value = StyleSheet::new().with_fg(grey_col);
     config.placeholder = StyleSheet::new().with_fg(grey_col);
@@ -135,7 +121,7 @@ pub fn get_spacetime_render_config() -> RenderConfig<'static> {
 
 pub fn print_banner() {
     println!(
-        "\n{} {} {}",
+        "\n{}  {} {}",
         orange("✱"),
         white("SPACETIME:"),
         muted("a benchmark for evaluating ai agents on terminal tasks")

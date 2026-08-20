@@ -9,7 +9,6 @@ pub mod tui;
 use std::path::{Path, PathBuf};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use comfy_table::{Cell, Color, Row, Table, presets::UTF8_FULL};
 
 use crate::agent::AgentProfile;
 use crate::docker::{DEFAULT_SANDBOX_IMAGE, ensure_sandbox_image};
@@ -17,7 +16,7 @@ use crate::eval::run_benchmark_suite;
 use crate::runner::TaskRunner;
 use crate::task::{find_task_by_id, load_all_tasks};
 use crate::tui::run_spacetime_wizard;
-use crate::tui::theme::{muted, orange, print_banner, trunk, white};
+use crate::tui::theme::{coral_red, muted, orange, print_banner, trunk, white};
 
 #[derive(Parser)]
 #[command(
@@ -31,66 +30,51 @@ struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 
-    /// Task ID to run directly (e.g., 001-nginx-config or 001)
     #[arg(global = true)]
     task_id: Option<String>,
 
-    /// Agent profile to benchmark (e.g. claude, claude-code, gemini, gemini-cli, aider, openhands)
     #[arg(short, long, global = true)]
     agent: Option<String>,
 
-    /// Custom in-container agent CLI command template (e.g. "python3 /root/agent.py {prompt}")
     #[arg(long, global = true)]
     agent_cmd: Option<String>,
 
-    /// Docker sandbox image tag (defaults to spacetime-sandbox:latest)
     #[arg(short, long, default_value = DEFAULT_SANDBOX_IMAGE, global = true)]
     image: String,
 
-    /// Execution timeout override in seconds for the agent per task
     #[arg(long, global = true)]
     timeout: Option<u64>,
 
-    /// Force rebuild of the Docker sandbox image
     #[arg(long, global = true)]
     force_rebuild: bool,
 
-    /// Directory containing benchmark tasks
     #[arg(short = 't', long, default_value = "tasks", global = true)]
     tasks_dir: PathBuf,
 }
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Launch the interactive TUI benchmark wizard
     Tui,
 
-    /// Run a specific benchmark task
     Run {
-        /// Task ID (e.g., 001-nginx-config, 001, port-conflict)
         task_id: String,
     },
 
-    /// Run the full benchmark suite across all tasks
     EvalAll {
-        /// Optional path to export JSON results
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
 
-    /// Build or rebuild the Docker sandbox image
     BuildImage {
-        /// Force rebuild even if image already exists
         #[arg(short, long)]
         force: bool,
     },
 
-    /// List all available benchmark tasks
     List,
 
-    /// Show detailed info and prompt for a specific task
+    Clean,
+
     Info {
-        /// Task ID
         task_id: String,
     },
 }
@@ -112,6 +96,9 @@ async fn main() -> Result<()> {
         }
         Some(Commands::List) => {
             list_tasks(tasks_dir)?;
+        }
+        Some(Commands::Clean) => {
+            clean_sandbox_containers().await?;
         }
         Some(Commands::Info { task_id }) => {
             show_task_info(tasks_dir, &task_id)?;
@@ -138,10 +125,67 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+async fn clean_sandbox_containers() -> Result<()> {
+    use bollard::Docker;
+    use bollard::container::{ListContainersOptions, RemoveContainerOptions};
+    use std::collections::HashMap;
+
+    let docker = Docker::connect_with_local_defaults()?;
+    let mut filters = HashMap::new();
+    filters.insert("name".to_string(), vec!["spacetime-".to_string()]);
+
+    let containers = docker
+        .list_containers(Some(ListContainersOptions {
+            all: true,
+            filters,
+            ..Default::default()
+        }))
+        .await?;
+
+    println!(
+        "\n{}  {}",
+        orange("✱"),
+        white("cleaning spacetime sandbox containers...")
+    );
+    println!("{}", trunk("│"));
+
+    if containers.is_empty() {
+        println!(
+            "{}  {}",
+            trunk("│"),
+            muted("no active or dangling spacetime containers found")
+        );
+    } else {
+        for c in containers {
+            if let Some(id) = c.id {
+                let _ = docker
+                    .remove_container(
+                        &id,
+                        Some(RemoveContainerOptions {
+                            force: true,
+                            ..Default::default()
+                        }),
+                    )
+                    .await;
+                println!(
+                    "{}  {} {}",
+                    trunk("│"),
+                    coral_red("removed:"),
+                    muted(&id[..12.min(id.len())])
+                );
+            }
+        }
+    }
+    println!("{}", trunk("│"));
+    println!("{}  {}", orange("✱"), white("clean state verified"));
+    println!("{}", trunk("│"));
+    Ok(())
+}
+
 fn list_tasks(tasks_dir: &Path) -> Result<()> {
     let tasks = load_all_tasks(tasks_dir)?;
     println!(
-        "\n{} {}",
+        "\n{}  {}",
         orange("✱"),
         white(&format!("found {} benchmark tasks in '{}':", tasks.len(), tasks_dir.display()))
     );
@@ -168,7 +212,7 @@ fn show_task_info(tasks_dir: &Path, task_id: &str) -> Result<()> {
     let task = find_task_by_id(tasks_dir, task_id)?;
     println!("\n{}", trunk("────────────────────────────────────────────────────────"));
     println!(
-        "{} {}",
+        "{}  {}",
         orange("✱"),
         white(&format!("task: {} ({})", task.name, task.id))
     );

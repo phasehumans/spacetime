@@ -4,7 +4,7 @@ use inquire::{MultiSelect, Select};
 use crate::types::BenchmarkTask;
 use crate::tui::theme::{
     clear_lines, get_spacetime_render_config, multiselect_help_message, muted, orange,
-    select_help_message, trunk, white,
+    print_breadcrumb, select_help_message, trunk,
 };
 
 pub fn get_task_category_tag(task_id: &str) -> &'static str {
@@ -56,7 +56,6 @@ pub fn prompt_task_selection(all_tasks: &[BenchmarkTask]) -> Result<Option<Vec<B
             return Ok(Some(all_tasks.to_vec()));
         }
 
-        // Build multi-select options
         let mut task_display_items = Vec::new();
         for t in all_tasks {
             let tag = get_task_category_tag(&t.id);
@@ -88,7 +87,6 @@ pub fn prompt_task_selection(all_tasks: &[BenchmarkTask]) -> Result<Option<Vec<B
         {
             Ok(indices) => indices,
             Err(inquire::InquireError::OperationCanceled) => {
-                // Esc on individual task list -> clear lines and go back to mode choice
                 clear_lines(num_items + 4 + 1);
                 continue 'task_mode_loop;
             }
@@ -110,12 +108,7 @@ pub fn prompt_task_selection(all_tasks: &[BenchmarkTask]) -> Result<Option<Vec<B
         }
 
         println!("{}", trunk("│"));
-        println!(
-            "{} {} {}",
-            trunk("│  selected:"),
-            white(&format!("{} tasks", selected_tasks.len())),
-            muted("| est. timeout: 120s/task")
-        );
+        print_breadcrumb("tasks", &format!("{} tasks selected", selected_tasks.len()));
         println!("{}", trunk("│"));
 
         return Ok(Some(selected_tasks));

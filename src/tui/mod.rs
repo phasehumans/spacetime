@@ -32,10 +32,8 @@ pub async fn run_spacetime_wizard(
         }
     };
 
-    // Ensure Docker image
     ensure_sandbox_image(&image, force_rebuild).await?;
 
-    // Step 4: Run benchmark suite with TUI progress
     let res = execute_benchmark_suite_tui(
         selected_tasks,
         agent_profile,

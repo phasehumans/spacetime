@@ -1,11 +1,10 @@
 use anyhow::Result;
-use inquire::{MultiSelect, Select, Text};
+use inquire::{Select, Text};
 
 use crate::agent::profile::{AgentProfile, HarnessType};
-use crate::tui::tasks::get_task_category_tag;
 use crate::tui::theme::{
-    clear_lines, get_spacetime_render_config, multiselect_help_message, muted, muted_italic,
-    orange, print_breadcrumb, select_help_message, show_cursor, trunk, white,
+    clear_lines, get_spacetime_render_config, muted, muted_italic,
+    print_breadcrumb, select_help_message, show_cursor, trunk, white,
 };
 use crate::types::BenchmarkTask;
 
@@ -16,9 +15,6 @@ pub enum WizardStep {
         harness: HarnessType,
     },
     ConfigureApiKey {
-        profile: AgentProfile,
-    },
-    SelectTasks {
         profile: AgentProfile,
     },
     ConfirmBenchmark {
@@ -52,7 +48,7 @@ pub fn run_wizard_navigation(
 
     let harness_options: Vec<String> = harnesses
         .iter()
-        .map(|h| format!(" {:<20} {}", h.to_string(), muted(h.description())))
+        .map(|h| format!(" {}", h.to_string()))
         .collect();
 
     let mut current_step = WizardStep::SelectHarness;
@@ -91,7 +87,6 @@ pub fn run_wizard_navigation(
                 println!("{}", trunk("│"));
 
                 if selected_harness == HarnessType::Custom {
-                    // Step A: Agent display name
                     let name_help = format!("e.g. AutoDev, MyCoder-v1, Qwen-Runner");
                     let agent_name = match Text::new(&format!("agent display name:\n  {}", muted_italic(&name_help)))
                         .with_default("Custom-Agent")
@@ -119,7 +114,6 @@ pub fn run_wizard_navigation(
                     };
                     clear_lines(2);
 
-                    // Step B: Select execution template or enter custom
                     let template_options = vec![
                         format!(" {:<44} {}", "python3 /workspace/agent.py \"{prompt}\"", muted("[python script]")),
                         format!(" {:<44} {}", "node /workspace/index.js \"{prompt}\"", muted("[node/ts script]")),
@@ -182,7 +176,6 @@ pub fn run_wizard_navigation(
                         }
                     };
 
-                    // Step C: Host directory to mount inside sandbox at /workspace
                     let mount_help = format!("local folder containing your agent code or scripts");
                     let mount_input = match Text::new(&format!("host directory to mount inside sandbox at /workspace:\n  {}", muted_italic(&mount_help)))
                         .with_default(".")
@@ -193,7 +186,7 @@ pub fn run_wizard_navigation(
                         Err(inquire::InquireError::OperationInterrupted) => {
                             show_cursor();
                             std::process::exit(130);
-                        }
+                            }
                         Err(inquire::InquireError::OperationCanceled) => {
                             clear_lines(2 + 2);
                             current_step = WizardStep::SelectHarness;
@@ -216,10 +209,10 @@ pub fn run_wizard_navigation(
 
                     print_breadcrumb("agent", &format!("{} ({})", agent_name, custom_cmd));
                     println!(
-                        "{} {} {}",
-                        trunk("│  mount ›"),
-                        white(&format!("{} ➔ /workspace", resolved_mount)),
-                        muted("")
+                        "{}  {} {}",
+                        trunk("│"),
+                        white("mount ›"),
+                        muted(&format!("{} ➔ /workspace", resolved_mount))
                     );
                     println!("{}", trunk("│"));
 
@@ -228,7 +221,11 @@ pub fn run_wizard_navigation(
                         custom_cmd,
                         Some(resolved_mount),
                     );
-                    current_step = WizardStep::SelectTasks { profile };
+
+                    current_step = WizardStep::ConfirmBenchmark {
+                        profile,
+                        tasks: all_tasks.to_vec(),
+                    };
                 } else {
                     current_step = WizardStep::SelectModel {
                         harness: selected_harness,
@@ -262,7 +259,6 @@ pub fn run_wizard_navigation(
                         std::process::exit(130);
                     }
                     Err(inquire::InquireError::OperationCanceled) => {
-                        // Esc on model select -> clear 2 lines + 2 lines harness breadcrumb
                         clear_lines(2 + 2);
                         current_step = WizardStep::SelectHarness;
                         continue;
@@ -364,7 +360,6 @@ pub fn run_wizard_navigation(
                             std::process::exit(130);
                         }
                         Err(inquire::InquireError::OperationCanceled) => {
-                            // Esc on API key prompt -> clear 2 lines + 2 lines model breadcrumb
                             clear_lines(2 + 2);
                             current_step = WizardStep::SelectModel {
                                 harness: profile.harness,
@@ -387,7 +382,6 @@ pub fn run_wizard_navigation(
                                 std::process::exit(130);
                             }
                             Err(inquire::InquireError::OperationCanceled) => {
-                                // Esc on manual key text input -> clear 1 line and re-prompt ConfigureApiKey
                                 clear_lines(1);
                                 current_step = WizardStep::ConfigureApiKey { profile };
                                 continue;
@@ -421,7 +415,6 @@ pub fn run_wizard_navigation(
                         print_breadcrumb("api key", &format!("set manually ({})", masked_key));
                         println!("{}", trunk("│"));
                     } else {
-                        // Load from environment
                         let (_, is_detected) = profile.check_env_status();
                         let status_display = if is_detected {
                             format!("detected ({})", key_name)
@@ -437,119 +430,19 @@ pub fn run_wizard_navigation(
                     println!("{}", trunk("│"));
                 }
 
-                current_step = WizardStep::SelectTasks { profile };
-            }
-
-            WizardStep::SelectTasks { profile } => {
-                let mode_options = vec![
-                    format!(
-                        " run all tasks ({}/{} tasks)",
-                        all_tasks.len(),
-                        all_tasks.len()
-                    ),
-                    format!(" select tasks individually from tree..."),
-                ];
-
-                let mode_choice = match Select::new("select tasks to benchmark\n", mode_options)
-                    .without_filtering()
-                    .with_help_message(&select_help_message())
-                    .with_render_config(get_spacetime_render_config())
-                    .prompt()
-                {
-                    Ok(c) => c,
-                    Err(inquire::InquireError::OperationInterrupted) => {
-                        show_cursor();
-                        std::process::exit(130);
-                    }
-                    Err(inquire::InquireError::OperationCanceled) => {
-                        // Esc on task mode select -> clear 2 lines + 2 lines api key breadcrumb
-                        clear_lines(2 + 2);
-                        current_step = WizardStep::ConfigureApiKey { profile };
-                        continue;
-                    }
-                    Err(e) => return Err(e.into()),
-                };
-
-                let selected_tasks = if mode_choice.trim().to_lowercase().contains("run all tasks") {
-                    clear_lines(2);
-                    all_tasks.to_vec()
-                } else {
-                    clear_lines(2);
-
-                    let mut task_display_items = Vec::new();
-                    for t in all_tasks {
-                        let tag = get_task_category_tag(&t.id);
-                        let desc = if !t.description.is_empty() {
-                            &t.description
-                        } else {
-                            &t.name
-                        };
-                        task_display_items.push(format!(
-                            " {:<24} {:<7} {}",
-                            t.id,
-                            orange(tag),
-                            muted(desc)
-                        ));
-                    }
-
-                    let selected_indices = match MultiSelect::new(
-                        "select benchmark tasks (space to toggle, 'a' select all)\n",
-                        task_display_items,
-                    )
-                    .without_filtering()
-                    .with_page_size(25)
-                    .with_help_message(&multiselect_help_message())
-                    .with_render_config(get_spacetime_render_config())
-                    .with_default(&(0..all_tasks.len()).collect::<Vec<usize>>())
-                    .prompt()
-                    {
-                        Ok(indices) => indices,
-                        Err(inquire::InquireError::OperationInterrupted) => {
-                            show_cursor();
-                            std::process::exit(130);
-                        }
-                        Err(inquire::InquireError::OperationCanceled) => {
-                            clear_lines(2);
-                            current_step = WizardStep::SelectTasks { profile };
-                            continue;
-                        }
-                        Err(e) => return Err(e.into()),
-                    };
-
-                    clear_lines(2);
-
-                    let mut tasks = Vec::new();
-                    for item in selected_indices {
-                        if let Some(t) = all_tasks.iter().find(|t| item.contains(&t.id)) {
-                            tasks.push(t.clone());
-                        }
-                    }
-
-                    if tasks.is_empty() {
-                        current_step = WizardStep::SelectTasks { profile };
-                        continue;
-                    }
-
-                    tasks
-                };
-
-                print_breadcrumb("tasks", &format!("{} tasks selected", selected_tasks.len()));
-                println!("{}", trunk("│"));
-
                 current_step = WizardStep::ConfirmBenchmark {
                     profile,
-                    tasks: selected_tasks,
+                    tasks: all_tasks.to_vec(),
                 };
             }
 
             WizardStep::ConfirmBenchmark { profile, tasks } => {
                 let confirm_options = vec![
-                    format!(" start benchmark ({} tasks)", tasks.len()),
-                    format!(" go back & adjust selection"),
+                    format!(" run benchmark ({} tasks)", tasks.len()),
                     format!(" cancel"),
                 ];
 
-                let choice = match Select::new("start benchmark evaluation?\n", confirm_options)
+                let choice = match Select::new("run benchmark suite?\n", confirm_options)
                     .without_filtering()
                     .with_help_message(&select_help_message())
                     .with_render_config(get_spacetime_render_config())
@@ -561,9 +454,12 @@ pub fn run_wizard_navigation(
                         std::process::exit(130);
                     }
                     Err(inquire::InquireError::OperationCanceled) => {
-                        // Esc on confirm -> clear 2 lines + 2 lines tasks breadcrumb, go back to SelectTasks
-                        clear_lines(2 + 2);
-                        current_step = WizardStep::SelectTasks { profile };
+                        clear_lines(2);
+                        if profile.harness == HarnessType::Custom {
+                            current_step = WizardStep::SelectHarness;
+                        } else {
+                            current_step = WizardStep::ConfigureApiKey { profile };
+                        }
                         continue;
                     }
                     Err(e) => return Err(e.into()),
@@ -571,14 +467,10 @@ pub fn run_wizard_navigation(
 
                 clear_lines(2);
 
-                if choice.contains("start benchmark") {
-                    print_breadcrumb("suite", &format!("{} • {} tasks", profile.name(), tasks.len()));
+                if choice.contains("run benchmark") {
+                    print_breadcrumb("tasks", &format!("all tasks ({}/{})", tasks.len(), tasks.len()));
                     println!("{}", trunk("│"));
                     return Ok(Some((profile, tasks)));
-                } else if choice.contains("go back") {
-                    clear_lines(2);
-                    current_step = WizardStep::SelectTasks { profile };
-                    continue;
                 } else {
                     return Ok(None);
                 }

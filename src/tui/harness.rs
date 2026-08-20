@@ -4,8 +4,8 @@ use inquire::{Select, Text};
 
 use crate::agent::profile::{AgentProfile, HarnessType};
 use crate::tui::theme::{
-    clear_lines, get_spacetime_render_config, muted, select_help_message,
-    select_help_message_with_hint, show_cursor, trunk, white,
+    clear_lines, get_spacetime_render_config, muted, print_breadcrumb,
+    select_help_message, select_help_message_with_hint, show_cursor, trunk,
 };
 
 pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
@@ -31,9 +31,7 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
 
     let harness_options: Vec<String> = harnesses
         .iter()
-        .map(|h| {
-            format!(" {:<20} {}", h.to_string(), muted(h.description()))
-        })
+        .map(|h| format!(" {}", h.to_string()))
         .collect();
 
     let mut last_sigint: Option<Instant> = None;
@@ -84,12 +82,7 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
         let selected_harness = harnesses[selected_index].clone();
 
         clear_lines(2);
-        println!(
-            "{} {} {}",
-            muted("✱  harness ›"),
-            white(&selected_harness.to_string()),
-            muted("")
-        );
+        print_breadcrumb("harness", &selected_harness.to_string());
         println!("{}", trunk("│"));
 
         if selected_harness == HarnessType::Custom {
@@ -105,7 +98,6 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
                     std::process::exit(130);
                 }
                 Err(inquire::InquireError::OperationCanceled) => {
-                    // Esc on custom template -> clear lines and go back to select agent harness
                     clear_lines(3 + 2);
                     continue 'harness_loop;
                 }
@@ -144,7 +136,6 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
                     std::process::exit(130);
                 }
                 Err(inquire::InquireError::OperationCanceled) => {
-                    // Esc on model select -> clear model prompt and harness header, go back to harness loop
                     clear_lines(model_options.len() + 4 + 2);
                     continue 'harness_loop;
                 }
@@ -170,7 +161,6 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
                         std::process::exit(130);
                     }
                     Err(inquire::InquireError::OperationCanceled) => {
-                        // Esc on custom model text input -> clear 3 lines, go back to model select
                         clear_lines(3);
                         continue 'model_loop;
                     }
@@ -194,12 +184,7 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
                 clear_lines(2);
             }
 
-            println!(
-                "{} {} {}",
-                muted("✱  model ›"),
-                white(&selected_model),
-                muted("")
-            );
+            print_breadcrumb("model", &selected_model);
             println!("{}", trunk("│"));
 
             let profile = AgentProfile::new(selected_harness.clone(), Some(selected_model));
@@ -235,7 +220,6 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
                             std::process::exit(130);
                         }
                         Err(inquire::InquireError::OperationCanceled) => {
-                            // Esc on API key prompt -> go back to model select
                             clear_lines(api_options.len() + 4 + 2);
                             continue 'model_loop;
                         }
@@ -255,7 +239,6 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
                                 std::process::exit(130);
                             }
                             Err(inquire::InquireError::OperationCanceled) => {
-                                // Esc on key text input -> clear text prompt (1 line) and go back to api select
                                 clear_lines(1);
                                 continue 'api_loop;
                             }
@@ -280,16 +263,10 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
                             "***".to_string()
                         };
 
-                        println!(
-                            "{} {} {}",
-                            muted("✱  api key ›"),
-                            white(&format!("set manually ({})", masked_key)),
-                            muted("")
-                        );
+                        print_breadcrumb("api key", &format!("set manually ({})", masked_key));
                         println!("{}", trunk("│"));
                         return Ok(Some(profile));
                     } else {
-                        // Load from environment / .env
                         let (_, is_detected) = profile.check_env_status();
                         let status_display = if is_detected {
                             format!("detected ({})", key_name)
@@ -297,23 +274,13 @@ pub fn prompt_agent_profile() -> Result<Option<AgentProfile>> {
                             format!("{} not set", key_name)
                         };
 
-                        println!(
-                            "{} {} {}",
-                            muted("✱  api key ›"),
-                            white(&status_display),
-                            muted("")
-                        );
+                        print_breadcrumb("api key", &status_display);
                         println!("{}", trunk("│"));
                         return Ok(Some(profile));
                     }
                 }
             } else {
-                println!(
-                    "{} {} {}",
-                    muted("✱  api key ›"),
-                    white("not required"),
-                    muted("")
-                );
+                print_breadcrumb("api key", "not required");
                 println!("{}", trunk("│"));
                 return Ok(Some(profile));
             }

@@ -115,11 +115,10 @@ impl TaskRunner {
             if !silent {
                 println!(
                     "{}",
-                    format!("✓ Environment initialized ({})", task.id).green()
+                    format!("Environment initialized ({})", task.id).green()
                 );
             }
 
-            // In-container agent execution
             on_stage(TaskStage::AgentRunning);
             let agent_cmd = agent_profile.build_in_container_cmd(&task.prompt);
             let env_vars = agent_profile.get_environment_variables();
@@ -142,7 +141,6 @@ impl TaskRunner {
             agent_output = agent_res.stdout;
             agent_exit_code = Some(agent_res.exit_code);
 
-            // Execute ground-truth test.sh
             on_stage(TaskStage::EvaluatingTest);
             let test_spinner = if !silent {
                 Some(create_spinner("Evaluating final container state with test.sh..."))
@@ -167,14 +165,12 @@ impl TaskRunner {
             }
         }
 
-        // Tear down environment
         if is_initialized {
             let _ = env.destroy().await;
         }
 
         let total_duration = start_time.elapsed().as_secs_f64();
 
-        // Save execution log
         save_task_log(&task.id, &agent_profile.name(), &agent_output, passed)?;
 
         if !silent {
@@ -195,9 +191,10 @@ impl TaskRunner {
             task_name: task.name.clone(),
             passed,
             duration_secs: total_duration,
+            agent_name,
+            exit_code: agent_exit_code,
             error_message,
-            agent_output: Some(agent_output),
-            agent_exit_code,
+            agent_output,
         })
     }
 }
