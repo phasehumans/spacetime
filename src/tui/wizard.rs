@@ -48,7 +48,7 @@ pub fn run_wizard_navigation(
 
     let harness_options: Vec<String> = harnesses
         .iter()
-        .map(|h| format!(" {}", h.to_string()))
+        .map(|h| format!(" {}", h))
         .collect();
 
     let mut current_step = WizardStep::SelectHarness;
@@ -87,7 +87,7 @@ pub fn run_wizard_navigation(
                 println!("{}", trunk("│"));
 
                 if selected_harness == HarnessType::Custom {
-                    let name_help = format!("e.g. AutoDev, MyCoder-v1, Qwen-Runner");
+                    let name_help = "e.g. AutoDev, MyCoder-v1, Qwen-Runner".to_string();
                     let agent_name = match Text::new(&format!("agent display name:\n  {}", muted_italic(&name_help)))
                         .with_default("Custom-Agent")
                         .with_render_config(get_spacetime_render_config())
@@ -143,7 +143,7 @@ pub fn run_wizard_navigation(
 
                     let custom_cmd = if template_choice.contains("custom command string") {
                         clear_lines(2);
-                        let cmd_help = format!("use {{prompt}} where task instruction should be inserted");
+                        let cmd_help = "use {prompt} where task instruction should be inserted".to_string();
                         let cmd_input = match Text::new(&format!("enter command template:\n  {}", muted_italic(&cmd_help)))
                             .with_default("./my-binary --prompt \"{prompt}\"")
                             .with_render_config(get_spacetime_render_config())
@@ -176,7 +176,7 @@ pub fn run_wizard_navigation(
                         }
                     };
 
-                    let mount_help = format!("local folder containing your agent code or scripts");
+                    let mount_help = "local folder containing your agent code or scripts".to_string();
                     let mount_input = match Text::new(&format!("host directory to mount inside sandbox at /workspace:\n  {}", muted_italic(&mount_help)))
                         .with_default(".")
                         .with_render_config(get_spacetime_render_config())
@@ -241,7 +241,7 @@ pub fn run_wizard_navigation(
                     let tag_colored = muted(&m.tag);
                     model_options.push(format!(" {:<32} {}", m.id, tag_colored));
                 }
-                model_options.push(format!(" custom model id..."));
+                model_options.push(" custom model id...".to_string());
 
                 let model_choice = match Select::new(
                     &format!("select model for {}\n", harness),
@@ -270,7 +270,7 @@ pub fn run_wizard_navigation(
                 let (selected_model, is_custom): (String, bool) =
                     if trimmed_model_choice.contains("custom model id") {
                         clear_lines(2);
-                        let model_help = format!("e.g. claude-3-7-sonnet, ollama/qwen2.5-coder:32b, openrouter/deepseek-r1");
+                        let model_help = "e.g. claude-3-7-sonnet, ollama/qwen2.5-coder:32b, openrouter/deepseek-r1".to_string();
                         let id = match Text::new(&format!("enter custom model identifier:\n  {}", muted_italic(&model_help)))
                             .with_render_config(get_spacetime_render_config())
                             .prompt()

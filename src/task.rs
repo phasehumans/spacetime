@@ -15,13 +15,11 @@ pub fn load_all_tasks(tasks_dir: &Path) -> Result<Vec<BenchmarkTask>> {
     for entry in entries {
         let entry = entry?;
         let path = entry.path();
-        if path.is_dir() {
-            if path.join("prompt.txt").exists() || path.join("meta.sh").exists() {
-                match load_task_from_dir(&path) {
-                    Ok(task) => tasks.push(task),
-                    Err(e) => {
-                        eprintln!("Warning: Failed to load task from {}: {}", path.display(), e);
-                    }
+        if path.is_dir() && (path.join("prompt.txt").exists() || path.join("meta.sh").exists() || path.join("meta.toml").exists()) {
+            match load_task_from_dir(&path) {
+                Ok(task) => tasks.push(task),
+                Err(e) => {
+                    eprintln!("Warning: Failed to load task from {}: {}", path.display(), e);
                 }
             }
         }
@@ -70,7 +68,8 @@ pub fn load_task_from_dir(dir: &Path) -> Result<BenchmarkTask> {
     let prompt_path = dir.join("prompt.txt");
     let setup_path = dir.join("setup.sh");
     let test_path = dir.join("test.sh");
-    let meta_path = dir.join("meta.sh");
+    let meta_toml_path = dir.join("meta.toml");
+    let meta_sh_path = dir.join("meta.sh");
 
     let prompt = if prompt_path.exists() {
         fs::read_to_string(&prompt_path)
@@ -88,31 +87,38 @@ pub fn load_task_from_dir(dir: &Path) -> Result<BenchmarkTask> {
     let mut timeout_secs = 30;
     let mut description = String::new();
 
-    if meta_path.exists() {
-        let meta_content = fs::read_to_string(&meta_path)?;
+    let meta_content_opt = if meta_toml_path.exists() {
+        Some(fs::read_to_string(&meta_toml_path)?)
+    } else if meta_sh_path.exists() {
+        Some(fs::read_to_string(&meta_sh_path)?)
+    } else {
+        None
+    };
+
+    if let Some(meta_content) = meta_content_opt {
         for line in meta_content.lines() {
             let line = line.trim();
             if line.starts_with('#') || line.is_empty() {
                 continue;
             }
             if let Some((key, val)) = line.split_once('=') {
-                let key = key.trim();
+                let key = key.trim().to_uppercase();
                 let val = val.trim().trim_matches('"').trim_matches('\'');
-                match key {
-                    "TASK_ID" => task_id = val.to_string(),
-                    "TASK_NAME" => task_name = val.to_string(),
-                    "BASE_IMAGE" => base_image = val.to_string(),
+                match key.as_str() {
+                    "TASK_ID" | "ID" => task_id = val.to_string(),
+                    "TASK_NAME" | "NAME" => task_name = val.to_string(),
+                    "BASE_IMAGE" | "IMAGE" => base_image = val.to_string(),
                     "MAX_TURNS" => {
                         if let Ok(n) = val.parse::<u32>() {
                             max_turns = n;
                         }
                     }
-                    "TIMEOUT_SECS" => {
+                    "TIMEOUT_SECS" | "TIMEOUT" => {
                         if let Ok(n) = val.parse::<u64>() {
                             timeout_secs = n;
                         }
                     }
-                    "DESCRIPTION" => description = val.to_string(),
+                    "DESCRIPTION" | "DESC" => description = val.to_string(),
                     _ => {}
                 }
             }
@@ -179,5 +185,28 @@ mod tests {
                 assert!(t.test_script.exists(), "Task {} missing test.sh", t.id);
             }
         }
+    }
+
+    #[test]
+    fn test_load_task_from_meta_toml() {
+        let temp_dir = std::env::temp_dir().join(format!("spacetime_test_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let _ = fs::create_dir_all(&temp_dir);
+        let _ = fs::write(temp_dir.join("prompt.txt"), "Test prompt");
+        let _ = fs::write(temp_dir.join("setup.sh"), "#!/bin/bash\necho setup");
+        let _ = fs::write(temp_dir.join("test.sh"), "#!/bin/bash\nexit 0");
+        let _ = fs::write(
+            temp_dir.join("meta.toml"),
+            "TASK_ID = \"999-custom-task\"\nTASK_NAME = \"Custom Task\"\nMAX_TURNS = 20\nTIMEOUT_SECS = 45\nDESCRIPTION = \"A test task\"\n",
+        );
+
+        let task = load_task_from_dir(&temp_dir).expect("Should load task with meta.toml");
+        assert_eq!(task.id, "999-custom-task");
+        assert_eq!(task.name, "Custom Task");
+        assert_eq!(task.max_turns, 20);
+        assert_eq!(task.timeout_secs, 45);
+        assert_eq!(task.description, "A test task");
+        assert_eq!(task.prompt, "Test prompt");
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

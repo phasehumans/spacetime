@@ -203,12 +203,14 @@ fn save_task_log(task_id: &str, agent_name: &str, output: &str, passed: bool) ->
     let clean_agent = agent_name.replace([' ', '(', ')', '/', '\\', ':'], "_");
     let log_dir = Path::new("results").join("logs");
     if !log_dir.exists() {
-        let _ = fs::create_dir_all(&log_dir);
+        fs::create_dir_all(&log_dir)
+            .with_context(|| format!("Failed to create log directory: {}", log_dir.display()))?;
     }
 
     let status = if passed { "PASS" } else { "FAIL" };
     let log_file = log_dir.join(format!("{}_{}_{}.log", task_id, clean_agent, status));
-    let _ = fs::write(&log_file, output);
+    fs::write(&log_file, output)
+        .with_context(|| format!("Failed to write log file: {}", log_file.display()))?;
     Ok(())
 }
 

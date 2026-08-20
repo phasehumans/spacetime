@@ -611,7 +611,11 @@ impl AgentProfile {
     }
 
     pub fn build_in_container_cmd(&self, prompt: &str) -> String {
-        let escaped_prompt = prompt.replace('\\', "\\\\").replace('"', "\\\"").replace('$', "\\$");
+        let escaped_prompt = prompt
+            .replace('\\', "\\\\")
+            .replace('"', "\\\"")
+            .replace('$', "\\$")
+            .replace('`', "\\`");
         match &self.harness {
             HarnessType::ClaudeCode => {
                 if let Some(model) = &self.model {
