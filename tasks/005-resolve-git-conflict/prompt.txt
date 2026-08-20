@@ -1,0 +1,1 @@
+There is a git repository at /repo with a merge conflict in file.txt. Resolve the conflict by keeping the 'master' version, and complete the merge commit.

@@ -1,0 +1,1 @@
+Extract all lines containing the word 'ERROR' from /var/log/app.log and save them to /tmp/errors.log.

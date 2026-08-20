@@ -1,0 +1,1 @@
+Add a cron job for the root user that runs the command '/backup.sh' every day at 2:00 AM.

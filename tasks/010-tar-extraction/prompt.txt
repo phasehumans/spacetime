@@ -1,0 +1,1 @@
+There is an archive at /data.tar.gz. Extract ONLY the file 'secret.txt' from it and place it at /root/secret.txt.

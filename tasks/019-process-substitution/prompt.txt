@@ -1,0 +1,1 @@
+Find the lines that are in /list1.txt but NOT in /list2.txt, and save the result to /diff.txt.

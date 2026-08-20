@@ -1,0 +1,1 @@
+Query the SQLite database at /data.db to find the username with id=1, and save the username to /tmp/admin.txt.

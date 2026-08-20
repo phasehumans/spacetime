@@ -1,0 +1,1 @@
+Create a new user named 'alice' and add her to the 'developers' group.

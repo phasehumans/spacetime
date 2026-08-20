@@ -1,7 +1,5 @@
-node_modules/
-dist/
-build/
+/target/
 .env
-npm-debug.log
-yarn-error.log
-.DS_Store
+.env.*
+!*.example
+/results/

@@ -1,0 +1,1 @@
+Modify the system so that when /app/run.sh is executed, it outputs 'The secret is xyz123'. You can modify the script itself or its environment.

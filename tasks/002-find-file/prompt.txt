@@ -1,0 +1,1 @@
+A secret configuration file named '.secret.cfg' is hidden somewhere inside /var/lib/app. Please find it and move it to /etc/app/config.cfg.

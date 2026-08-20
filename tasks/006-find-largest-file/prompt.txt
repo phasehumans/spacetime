@@ -1,0 +1,1 @@
+Find the largest file in the /data directory and delete it to free up space.

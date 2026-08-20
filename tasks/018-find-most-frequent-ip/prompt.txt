@@ -1,0 +1,1 @@
+Find the IP address that appears most frequently in /var/log/access.log and write just that IP to /tmp/top_ip.txt.

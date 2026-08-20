@@ -1,0 +1,1 @@
+A rogue process is listening on port 8080, preventing our application from starting. Find the process and terminate it so the port is free.
