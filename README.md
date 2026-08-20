@@ -1,41 +1,47 @@
-<img src="website/logo.svg" alt="spacetime" height="30" />
+<p align="center">
+  <img src="website/logo.svg" alt="spacetime" height="30" />
+</p>
 
-A benchmark for evaluating AI agents on interactive terminal tasks.
-It executes agents inside isolated Docker containers to solve realistic Linux problems and tests if their solutions actually work.
+<h4 align="center">a benchmark for evaluating ai agents on interactive terminal tasks</h4>
 
-- **Clean Docker Sandboxes:** Every task runs in a fresh, isolated container so nothing leaks between test runs.
-- **Works with Any Agent:** Ready-to-use support for Claude Code, Gemini CLI, Codex, Aider, OpenHands, and custom agent binaries.
-- **Smart Performance Insights:** Tracks pass rates, speed, error recovery, and how well agents verify their own work.
-- **Simple Interactive CLI:** A step-by-step terminal wizard to pick your agent, choose models, and run benchmarks in seconds.
+spacetime evaluates ai agents inside isolated docker containers on real terminal challenges like fixing broken nginx servers, resolving git conflicts, parsing logs, and repairing port clashes. solutions are tested against strict test assertions to verify what actually works.
 
 ```bash
 curl -fsSL https://spacetime.trydecember.com | bash
 ```
 
+### how it works
+
+- starts a fresh, isolated docker container
+- gives the agent terminal access to fix the task
+- streams live terminal output in real time
+- runs automated tests to verify the solution
+- cleans up and generates the final scorecard
+
 ```mermaid
 sequenceDiagram
     autonumber
-    participant CLI as Spacetime CLI
-    box Hermetic Docker Sandbox
-        participant Agent as In-Container AI Agent
-        participant Env as Linux Environment (/root)
+    participant CLI as spacetime cli
+    box hermetic docker sandbox
+        participant Agent as in-container ai agent
+        participant Env as linux environment (/root)
     end
-    participant Telemetry as Telemetry Engine
+    participant Telemetry as telemetry engine
 
-    CLI->>Env: Spin up container & execute setup.sh
-    CLI->>Agent: Spawn in-container agent with objective prompt
+    CLI->>Env: spin up container & execute setup.sh
+    CLI->>Agent: spawn in-container agent with objective prompt
     
-    loop In-Container Execution (Max Turns / Timeout)
-        Agent->>Env: Run bash commands & edit files
-        Env-->>CLI: Stream real-time stdout / stderr
-        Agent->>Env: Run self-verification checks (curl, diff, status)
+    loop in-container execution (max turns / timeout)
+        Agent->>Env: run bash commands & edit files
+        Env-->>CLI: stream real-time stdout / stderr
+        Agent->>Env: run self-verification checks (curl, diff, status)
     end
-    Agent-->>CLI: Agent process exits (output & exit code)
+    Agent-->>CLI: agent process exits (output & exit code)
 
-    CLI->>Env: Execute test.sh (ground-truth validation)
-    Env-->>CLI: Verdict (exit 0 = Pass / exit 1 = Fail)
-    CLI->>Env: Destroy and purge container
+    CLI->>Env: execute test.sh (ground-truth validation)
+    Env-->>CLI: verdict (exit 0 = pass / exit 1 = fail)
+    CLI->>Env: destroy and purge container
 
-    CLI->>Telemetry: Compute resolution rate, latency & intelligence metrics
-    Telemetry-->>CLI: Render scorecard & save JSON report
+    CLI->>Telemetry: compute resolution rate, latency & intelligence metrics
+    Telemetry-->>CLI: render scorecard & save json report
 ```

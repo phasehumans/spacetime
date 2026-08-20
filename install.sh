@@ -77,7 +77,7 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 log_tree "downloading pre-compiled release binary..."
-if ! curl -f --progress-bar "$DOWNLOAD_URL" -o "${TMP_DIR}/${ARCHIVE}"; then
+if ! curl -fL --progress-bar "$DOWNLOAD_URL" -o "${TMP_DIR}/${ARCHIVE}"; then
     echo -e "${TRUNK}│${RESET}"
     log_error "Failed to download from ${DOWNLOAD_URL}"
     log_tree "Check https://github.com/${REPO}/releases for available versions."
