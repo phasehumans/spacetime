@@ -453,9 +453,14 @@ impl AgentProfile {
             }
             "aider" => AgentProfile::new(HarnessType::Aider, Some("claude-3-7-sonnet".to_string())),
             "devin" => AgentProfile::new(HarnessType::Devin, Some("devin-v1".to_string())),
-            "december" => AgentProfile::new(HarnessType::December, Some("claude-3-7-sonnet".to_string())),
+            "december" => {
+                AgentProfile::new(HarnessType::December, Some("claude-3-7-sonnet".to_string()))
+            }
             "pi" => AgentProfile::new(HarnessType::Pi, Some("inflection-2.5".to_string())),
-            "cursor" | "cursor-cli" => AgentProfile::new(HarnessType::CursorCli, Some("claude-3-7-sonnet".to_string())),
+            "cursor" | "cursor-cli" => AgentProfile::new(
+                HarnessType::CursorCli,
+                Some("claude-3-7-sonnet".to_string()),
+            ),
             "swe-agent" | "sweagent" => AgentProfile::new(
                 HarnessType::SweAgent,
                 Some("claude-3-7-sonnet-20250219".to_string()),
@@ -465,9 +470,14 @@ impl AgentProfile {
                 Some("anthropic/claude-3-7-sonnet".to_string()),
             ),
             "goose" => AgentProfile::new(HarnessType::Goose, Some("claude-3-7-sonnet".to_string())),
-            "plandex" => AgentProfile::new(HarnessType::Plandex, Some("claude-3-7-sonnet".to_string())),
+            "plandex" => {
+                AgentProfile::new(HarnessType::Plandex, Some("claude-3-7-sonnet".to_string()))
+            }
             "cline" => AgentProfile::new(HarnessType::Cline, Some("claude-3-7-sonnet".to_string())),
-            "smolagents" => AgentProfile::new(HarnessType::Smolagents, Some("Qwen/Qwen2.5-Coder-32B-Instruct".to_string())),
+            "smolagents" => AgentProfile::new(
+                HarnessType::Smolagents,
+                Some("Qwen/Qwen2.5-Coder-32B-Instruct".to_string()),
+            ),
             "mentat" => AgentProfile::new(HarnessType::Mentat, Some("gpt-4o".to_string())),
             other => {
                 if other.contains(' ') || other.contains('/') {
@@ -660,25 +670,28 @@ impl AgentProfile {
                         model
                     )
                 } else {
-                    "aider --message \"$SPACETIME_PROMPT\" --yes --no-git --no-auto-commits".to_string()
+                    "aider --message \"$SPACETIME_PROMPT\" --yes --no-git --no-auto-commits"
+                        .to_string()
                 }
             }
-            HarnessType::Devin => {
-                "devin run --prompt \"$SPACETIME_PROMPT\"".to_string()
-            }
+            HarnessType::Devin => "devin run --prompt \"$SPACETIME_PROMPT\"".to_string(),
             HarnessType::December => {
                 if let Some(model) = &self.model {
-                    format!("december run --prompt \"$SPACETIME_PROMPT\" --model \"{}\" --headless", model)
+                    format!(
+                        "december run --prompt \"$SPACETIME_PROMPT\" --model \"{}\" --headless",
+                        model
+                    )
                 } else {
                     "december run --prompt \"$SPACETIME_PROMPT\" --headless".to_string()
                 }
             }
-            HarnessType::Pi => {
-                "pi query \"$SPACETIME_PROMPT\"".to_string()
-            }
+            HarnessType::Pi => "pi query \"$SPACETIME_PROMPT\"".to_string(),
             HarnessType::CursorCli => {
                 if let Some(model) = &self.model {
-                    format!("cursor-agent --message \"$SPACETIME_PROMPT\" --model \"{}\"", model)
+                    format!(
+                        "cursor-agent --message \"$SPACETIME_PROMPT\" --model \"{}\"",
+                        model
+                    )
                 } else {
                     "cursor-agent --message \"$SPACETIME_PROMPT\"".to_string()
                 }
@@ -695,21 +708,30 @@ impl AgentProfile {
             }
             HarnessType::OpenHands => {
                 if let Some(model) = &self.model {
-                    format!("openhands --model \"{}\" --task \"$SPACETIME_PROMPT\"", model)
+                    format!(
+                        "openhands --model \"{}\" --task \"$SPACETIME_PROMPT\"",
+                        model
+                    )
                 } else {
                     "openhands --task \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::Goose => {
                 if let Some(model) = &self.model {
-                    format!("goose run --instruction \"$SPACETIME_PROMPT\" --model \"{}\"", model)
+                    format!(
+                        "goose run --instruction \"$SPACETIME_PROMPT\" --model \"{}\"",
+                        model
+                    )
                 } else {
                     "goose run --instruction \"$SPACETIME_PROMPT\"".to_string()
                 }
             }
             HarnessType::Plandex => {
                 if let Some(model) = &self.model {
-                    format!("plandex prompt \"$SPACETIME_PROMPT\" --model \"{}\" --auto-apply", model)
+                    format!(
+                        "plandex prompt \"$SPACETIME_PROMPT\" --model \"{}\" --auto-apply",
+                        model
+                    )
                 } else {
                     "plandex prompt \"$SPACETIME_PROMPT\" --auto-apply".to_string()
                 }
@@ -730,7 +752,10 @@ impl AgentProfile {
             }
             HarnessType::Mentat => {
                 if let Some(model) = &self.model {
-                    format!("mentat --prompt \"$SPACETIME_PROMPT\" --model \"{}\" --auto", model)
+                    format!(
+                        "mentat --prompt \"$SPACETIME_PROMPT\" --model \"{}\" --auto",
+                        model
+                    )
                 } else {
                     "mentat --prompt \"$SPACETIME_PROMPT\" --auto".to_string()
                 }
@@ -761,10 +786,18 @@ impl AgentProfile {
             if m_lower.contains("gemini") {
                 return Some("GEMINI_API_KEY");
             }
-            if m_lower.contains("gpt") || m_lower.contains("o1") || m_lower.contains("o3") || m_lower.starts_with("openai/") {
+            if m_lower.contains("gpt")
+                || m_lower.contains("o1")
+                || m_lower.contains("o3")
+                || m_lower.starts_with("openai/")
+            {
                 return Some("OPENAI_API_KEY");
             }
-            if m_lower.contains("claude") || m_lower.contains("sonnet") || m_lower.contains("haiku") || m_lower.starts_with("anthropic/") {
+            if m_lower.contains("claude")
+                || m_lower.contains("sonnet")
+                || m_lower.contains("haiku")
+                || m_lower.starts_with("anthropic/")
+            {
                 return Some("ANTHROPIC_API_KEY");
             }
             if m_lower.contains("deepseek") {
@@ -838,9 +871,11 @@ impl AgentProfile {
 
     pub fn token_pricing_per_million(&self) -> (f64, f64) {
         let model_str = self.model.as_deref().unwrap_or("").to_lowercase();
-        if model_str.contains("3-7-sonnet") || model_str.contains("3.7-sonnet") {
-            (3.00, 15.00)
-        } else if model_str.contains("3-5-sonnet") || model_str.contains("3.5-sonnet") {
+        if model_str.contains("3-7-sonnet")
+            || model_str.contains("3.7-sonnet")
+            || model_str.contains("3-5-sonnet")
+            || model_str.contains("3.5-sonnet")
+        {
             (3.00, 15.00)
         } else if model_str.contains("3-5-haiku") || model_str.contains("3.5-haiku") {
             (0.80, 4.00)
@@ -909,15 +944,16 @@ mod tests {
         assert!(cmd.contains("--model \"claude-3-7-sonnet-20250219\""));
         assert!(cmd.contains("--dangerously-skip-permissions"));
 
-        let codex_profile = AgentProfile::new(
-            HarnessType::Codex,
-            Some("gpt-4o".to_string()),
-        );
+        let codex_profile = AgentProfile::new(HarnessType::Codex, Some("gpt-4o".to_string()));
         let codex_cmd = codex_profile.build_in_container_cmd("Fix issue");
         assert!(codex_cmd.contains("codex run --prompt \"$SPACETIME_PROMPT\""));
 
-        let custom_profile = AgentProfile::custom("python3 /workspace/agent.py {prompt}".to_string());
+        let custom_profile =
+            AgentProfile::custom("python3 /workspace/agent.py {prompt}".to_string());
         let custom_cmd = custom_profile.build_in_container_cmd("Fix bug; rm -rf /");
-        assert_eq!(custom_cmd, "python3 /workspace/agent.py \"$SPACETIME_PROMPT\"");
+        assert_eq!(
+            custom_cmd,
+            "python3 /workspace/agent.py \"$SPACETIME_PROMPT\""
+        );
     }
 }

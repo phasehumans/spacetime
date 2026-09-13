@@ -1,7 +1,7 @@
+use anyhow::{anyhow, Context, Result};
+use include_dir::{include_dir, Dir};
 use std::fs;
 use std::path::{Path, PathBuf};
-use anyhow::{Context, Result, anyhow};
-use include_dir::{include_dir, Dir};
 
 use crate::types::BenchmarkTask;
 
@@ -27,12 +27,20 @@ pub fn get_default_tasks_cache_dir() -> PathBuf {
 
 pub fn ensure_embedded_tasks_extracted(target_dir: &Path) -> Result<()> {
     if !target_dir.exists() {
-        fs::create_dir_all(target_dir)
-            .with_context(|| format!("Failed to create tasks cache directory at {}", target_dir.display()))?;
+        fs::create_dir_all(target_dir).with_context(|| {
+            format!(
+                "Failed to create tasks cache directory at {}",
+                target_dir.display()
+            )
+        })?;
     }
 
-    EMBEDDED_TASKS.extract(target_dir)
-        .with_context(|| format!("Failed to extract embedded tasks into {}", target_dir.display()))?;
+    EMBEDDED_TASKS.extract(target_dir).with_context(|| {
+        format!(
+            "Failed to extract embedded tasks into {}",
+            target_dir.display()
+        )
+    })?;
 
     Ok(())
 }
@@ -47,11 +55,19 @@ pub fn load_all_tasks(tasks_dir: &Path) -> Result<Vec<BenchmarkTask>> {
     for entry in entries {
         let entry = entry?;
         let path = entry.path();
-        if path.is_dir() && (path.join("prompt.txt").exists() || path.join("meta.sh").exists() || path.join("meta.toml").exists()) {
+        if path.is_dir()
+            && (path.join("prompt.txt").exists()
+                || path.join("meta.sh").exists()
+                || path.join("meta.toml").exists())
+        {
             match load_task_from_dir(&path) {
                 Ok(task) => tasks.push(task),
                 Err(e) => {
-                    eprintln!("Warning: Failed to load task from {}: {}", path.display(), e);
+                    eprintln!(
+                        "Warning: Failed to load task from {}: {}",
+                        path.display(),
+                        e
+                    );
                 }
             }
         }
@@ -63,7 +79,7 @@ pub fn load_all_tasks(tasks_dir: &Path) -> Result<Vec<BenchmarkTask>> {
 
 pub fn find_task_by_id(tasks_dir: &Path, id_query: &str) -> Result<BenchmarkTask> {
     let tasks = load_all_tasks(tasks_dir)?;
-    
+
     if let Some(task) = tasks.iter().find(|t| t.id == id_query) {
         return Ok(task.clone());
     }
@@ -192,8 +208,13 @@ mod tests {
     #[test]
     fn test_load_embedded_tasks_fallback() {
         let nonexistent_dir = Path::new("/nonexistent_spacetime_tasks_dir_12345");
-        let tasks = load_all_tasks(nonexistent_dir).expect("Failed to load embedded tasks on fallback");
-        assert_eq!(tasks.len(), 50, "Expected 50 embedded tasks loaded from binary");
+        let tasks =
+            load_all_tasks(nonexistent_dir).expect("Failed to load embedded tasks on fallback");
+        assert_eq!(
+            tasks.len(),
+            50,
+            "Expected 50 embedded tasks loaded from binary"
+        );
     }
 
     #[test]
@@ -222,7 +243,13 @@ mod tests {
 
     #[test]
     fn test_load_task_from_meta_toml() {
-        let temp_dir = std::env::temp_dir().join(format!("spacetime_test_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let temp_dir = std::env::temp_dir().join(format!(
+            "spacetime_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         let _ = fs::create_dir_all(&temp_dir);
         let _ = fs::write(temp_dir.join("prompt.txt"), "Test prompt");
         let _ = fs::write(temp_dir.join("setup.sh"), "#!/bin/bash\necho setup");

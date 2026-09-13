@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="website/logo.svg" alt="spacetime" height="30" />
+  <img src="logo.svg" alt="spacetime" height="30" />
 </p>
 
-<h4 align="center">A benchmark for evaluating coding agents on interactive terminal tasks</h4>
+<h4 align="center">a benchmark for evaluating coding agents on interactive terminal tasks</h4>
 
 Spacetime evaluates AI agents inside isolated Docker containers on real terminal challenges like fixing broken Nginx servers, resolving Git conflicts, parsing logs, and repairing port clashes. Solutions are tested against strict test assertions to verify what actually works.
 

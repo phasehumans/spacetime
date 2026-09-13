@@ -3,8 +3,8 @@ use inquire::{Select, Text};
 
 use crate::agent::profile::{AgentProfile, HarnessType};
 use crate::tui::theme::{
-    clear_lines, get_spacetime_render_config, muted, muted_italic,
-    print_breadcrumb, select_help_message, show_cursor, trunk, white,
+    clear_lines, get_spacetime_render_config, muted, muted_italic, print_breadcrumb,
+    select_help_message, show_cursor, trunk, white,
 };
 use crate::types::BenchmarkTask;
 
@@ -46,34 +46,32 @@ pub fn run_wizard_navigation(
         HarnessType::Custom,
     ];
 
-    let harness_options: Vec<String> = harnesses
-        .iter()
-        .map(|h| format!(" {}", h))
-        .collect();
+    let harness_options: Vec<String> = harnesses.iter().map(|h| format!(" {}", h)).collect();
 
     let mut current_step = WizardStep::SelectHarness;
 
     loop {
         match current_step {
             WizardStep::SelectHarness => {
-                let harness_choice = match Select::new("select agent harness\n", harness_options.clone())
-                    .without_filtering()
-                    .with_page_size(25)
-                    .with_help_message(&select_help_message())
-                    .with_render_config(get_spacetime_render_config())
-                    .prompt()
-                {
-                    Ok(choice) => choice,
-                    Err(inquire::InquireError::OperationInterrupted) => {
-                        show_cursor();
-                        std::process::exit(130);
-                    }
-                    Err(inquire::InquireError::OperationCanceled) => {
-                        clear_lines(2);
-                        return Ok(None);
-                    }
-                    Err(e) => return Err(e.into()),
-                };
+                let harness_choice =
+                    match Select::new("select agent harness\n", harness_options.clone())
+                        .without_filtering()
+                        .with_page_size(25)
+                        .with_help_message(&select_help_message())
+                        .with_render_config(get_spacetime_render_config())
+                        .prompt()
+                    {
+                        Ok(choice) => choice,
+                        Err(inquire::InquireError::OperationInterrupted) => {
+                            show_cursor();
+                            std::process::exit(130);
+                        }
+                        Err(inquire::InquireError::OperationCanceled) => {
+                            clear_lines(2);
+                            return Ok(None);
+                        }
+                        Err(e) => return Err(e.into()),
+                    };
 
                 let trimmed_choice = harness_choice.trim();
                 let selected_index = harnesses
@@ -88,10 +86,13 @@ pub fn run_wizard_navigation(
 
                 if selected_harness == HarnessType::Custom {
                     let name_help = "e.g. AutoDev, MyCoder-v1, Qwen-Runner".to_string();
-                    let agent_name = match Text::new(&format!("agent display name:\n  {}", muted_italic(&name_help)))
-                        .with_default("Custom-Agent")
-                        .with_render_config(get_spacetime_render_config())
-                        .prompt()
+                    let agent_name = match Text::new(&format!(
+                        "agent display name:\n  {}",
+                        muted_italic(&name_help)
+                    ))
+                    .with_default("Custom-Agent")
+                    .with_render_config(get_spacetime_render_config())
+                    .prompt()
                     {
                         Ok(n) => {
                             let trimmed = n.trim();
@@ -115,18 +116,33 @@ pub fn run_wizard_navigation(
                     clear_lines(2);
 
                     let template_options = vec![
-                        format!(" {:<44} {}", "python3 /workspace/agent.py \"{prompt}\"", muted("[python script]")),
-                        format!(" {:<44} {}", "node /workspace/index.js \"{prompt}\"", muted("[node/ts script]")),
-                        format!(" {:<44} {}", "bash /workspace/agent.sh \"{prompt}\"", muted("[shell script]")),
+                        format!(
+                            " {:<44} {}",
+                            "python3 /workspace/agent.py \"{prompt}\"",
+                            muted("[python script]")
+                        ),
+                        format!(
+                            " {:<44} {}",
+                            "node /workspace/index.js \"{prompt}\"",
+                            muted("[node/ts script]")
+                        ),
+                        format!(
+                            " {:<44} {}",
+                            "bash /workspace/agent.sh \"{prompt}\"",
+                            muted("[shell script]")
+                        ),
                         format!(" custom command string..."),
                     ];
 
-                    let template_choice = match Select::new("select execution template or enter custom\n", template_options)
-                        .without_filtering()
-                        .with_page_size(25)
-                        .with_help_message(&select_help_message())
-                        .with_render_config(get_spacetime_render_config())
-                        .prompt()
+                    let template_choice = match Select::new(
+                        "select execution template or enter custom\n",
+                        template_options,
+                    )
+                    .without_filtering()
+                    .with_page_size(25)
+                    .with_help_message(&select_help_message())
+                    .with_render_config(get_spacetime_render_config())
+                    .prompt()
                     {
                         Ok(c) => c,
                         Err(inquire::InquireError::OperationInterrupted) => {
@@ -143,11 +159,15 @@ pub fn run_wizard_navigation(
 
                     let custom_cmd = if template_choice.contains("custom command string") {
                         clear_lines(2);
-                        let cmd_help = "use {prompt} where task instruction should be inserted".to_string();
-                        let cmd_input = match Text::new(&format!("enter command template:\n  {}", muted_italic(&cmd_help)))
-                            .with_default("./my-binary --prompt \"{prompt}\"")
-                            .with_render_config(get_spacetime_render_config())
-                            .prompt()
+                        let cmd_help =
+                            "use {prompt} where task instruction should be inserted".to_string();
+                        let cmd_input = match Text::new(&format!(
+                            "enter command template:\n  {}",
+                            muted_italic(&cmd_help)
+                        ))
+                        .with_default("./my-binary --prompt \"{prompt}\"")
+                        .with_render_config(get_spacetime_render_config())
+                        .prompt()
                         {
                             Ok(c) => c,
                             Err(inquire::InquireError::OperationInterrupted) => {
@@ -176,17 +196,21 @@ pub fn run_wizard_navigation(
                         }
                     };
 
-                    let mount_help = "local folder containing your agent code or scripts".to_string();
-                    let mount_input = match Text::new(&format!("host directory to mount inside sandbox at /workspace:\n  {}", muted_italic(&mount_help)))
-                        .with_default(".")
-                        .with_render_config(get_spacetime_render_config())
-                        .prompt()
+                    let mount_help =
+                        "local folder containing your agent code or scripts".to_string();
+                    let mount_input = match Text::new(&format!(
+                        "host directory to mount inside sandbox at /workspace:\n  {}",
+                        muted_italic(&mount_help)
+                    ))
+                    .with_default(".")
+                    .with_render_config(get_spacetime_render_config())
+                    .prompt()
                     {
                         Ok(m) => m,
                         Err(inquire::InquireError::OperationInterrupted) => {
                             show_cursor();
                             std::process::exit(130);
-                            }
+                        }
                         Err(inquire::InquireError::OperationCanceled) => {
                             clear_lines(2 + 2);
                             current_step = WizardStep::SelectHarness;
@@ -270,10 +294,15 @@ pub fn run_wizard_navigation(
                 let (selected_model, is_custom): (String, bool) =
                     if trimmed_model_choice.contains("custom model id") {
                         clear_lines(2);
-                        let model_help = "e.g. claude-3-7-sonnet, ollama/qwen2.5-coder:32b, openrouter/deepseek-r1".to_string();
-                        let id = match Text::new(&format!("enter custom model identifier:\n  {}", muted_italic(&model_help)))
-                            .with_render_config(get_spacetime_render_config())
-                            .prompt()
+                        let model_help =
+                        "e.g. claude-3-7-sonnet, ollama/qwen2.5-coder:32b, openrouter/deepseek-r1"
+                            .to_string();
+                        let id = match Text::new(&format!(
+                            "enter custom model identifier:\n  {}",
+                            muted_italic(&model_help)
+                        ))
+                        .with_render_config(get_spacetime_render_config())
+                        .prompt()
                         {
                             Ok(id) => {
                                 let trimmed = id.trim().to_string();
@@ -405,7 +434,10 @@ pub fn run_wizard_navigation(
                         let char_count = trimmed_key.chars().count();
                         let masked_key = if char_count > 8 {
                             let prefix: String = trimmed_key.chars().take(4).collect();
-                            let suffix: String = trimmed_key.chars().skip(char_count.saturating_sub(4)).collect();
+                            let suffix: String = trimmed_key
+                                .chars()
+                                .skip(char_count.saturating_sub(4))
+                                .collect();
                             format!("{}...{}", prefix, suffix)
                         } else {
                             "***".to_string()
@@ -467,7 +499,10 @@ pub fn run_wizard_navigation(
                 clear_lines(2);
 
                 if choice.contains("run benchmark") {
-                    print_breadcrumb("tasks", &format!("all tasks ({}/{})", tasks.len(), tasks.len()));
+                    print_breadcrumb(
+                        "tasks",
+                        &format!("all tasks ({}/{})", tasks.len(), tasks.len()),
+                    );
                     println!("{}", trunk("│"));
                     return Ok(Some((profile, tasks)));
                 } else {

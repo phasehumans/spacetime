@@ -1,16 +1,16 @@
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
 use anyhow::{Context, Result};
 use chrono::Utc;
 use indicatif::{ProgressBar, ProgressStyle};
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use crate::agent::AgentProfile;
-use crate::eval::{compute_intelligence_profile, generate_harness_insights, print_evaluation_summary};
-use crate::runner::{TaskRunner, TaskStage};
-use crate::tui::theme::{
-    coral_red, mint_green, muted, orange, trunk, white,
+use crate::eval::{
+    compute_intelligence_profile, generate_harness_insights, print_evaluation_summary,
 };
+use crate::runner::{TaskRunner, TaskStage};
+use crate::tui::theme::{coral_red, mint_green, muted, orange, trunk, white};
 use crate::types::{BenchmarkSuiteResult, BenchmarkTask, TaskResult};
 
 pub async fn execute_benchmark_suite_tui(

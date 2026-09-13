@@ -1,9 +1,9 @@
+use anyhow::{anyhow, Context, Result};
+use colored::*;
+use indicatif::{ProgressBar, ProgressStyle};
 use std::fs;
 use std::path::Path;
 use std::time::Instant;
-use anyhow::{Context, Result, anyhow};
-use colored::*;
-use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::agent::AgentProfile;
 use crate::docker::EnvironmentManager;
@@ -129,7 +129,10 @@ impl TaskRunner {
             if !silent {
                 println!("\n{}", "• Spawning In-Container Agent:".bold().white());
                 println!("  {}\n", agent_cmd.yellow());
-                println!("{}", "--------------------------------------------------------".dimmed());
+                println!(
+                    "{}",
+                    "--------------------------------------------------------".dimmed()
+                );
             }
 
             let agent_res = env
@@ -137,7 +140,10 @@ impl TaskRunner {
                 .await?;
 
             if !silent {
-                println!("\n{}", "--------------------------------------------------------".dimmed());
+                println!(
+                    "\n{}",
+                    "--------------------------------------------------------".dimmed()
+                );
             }
 
             agent_output = crate::docker::scrub_secrets(&agent_res.stdout);
@@ -145,7 +151,9 @@ impl TaskRunner {
 
             on_stage(TaskStage::EvaluatingTest);
             let test_spinner = if !silent {
-                Some(create_spinner("Evaluating final container state with test.sh..."))
+                Some(create_spinner(
+                    "Evaluating final container state with test.sh...",
+                ))
             } else {
                 None
             };
@@ -193,13 +201,21 @@ impl TaskRunner {
             println!("  {:<12} {}", "Task:".dimmed(), task.name.white());
             println!("  {:<12} {}", "Agent:".dimmed(), agent_name.white());
             println!("  {:<12} {:.2}s", "Duration:".dimmed(), total_duration);
-            println!("  {:<12} {} tokens (${:.4} USD)", "Tokens:".dimmed(), total_tokens, estimated_cost_usd);
+            println!(
+                "  {:<12} {} tokens (${:.4} USD)",
+                "Tokens:".dimmed(),
+                total_tokens,
+                estimated_cost_usd
+            );
             if passed {
                 println!("  {:<12} {}", "Result:".dimmed(), "PASSED".green().bold());
             } else {
                 println!("  {:<12} {}", "Result:".dimmed(), "FAILED".red().bold());
             }
-            println!("{}\n", "========================================================".dimmed());
+            println!(
+                "{}\n",
+                "========================================================".dimmed()
+            );
         }
 
         Ok(TaskResult {

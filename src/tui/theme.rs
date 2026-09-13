@@ -38,7 +38,12 @@ pub fn trunk(text: &str) -> String {
 }
 
 pub fn breadcrumb(label: &str, value: &str) -> String {
-    format!("{}  {} {}", orange("✱"), white(&format!("{} ›", label)), muted(value))
+    format!(
+        "{}  {} {}",
+        orange("✱"),
+        white(&format!("{} ›", label)),
+        muted(value)
+    )
 }
 
 pub fn print_breadcrumb(label: &str, value: &str) {

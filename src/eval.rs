@@ -1,16 +1,14 @@
+use anyhow::{Context, Result};
+use chrono::Utc;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-use anyhow::{Context, Result};
-use chrono::Utc;
 
 use crate::agent::AgentProfile;
 use crate::runner::TaskRunner;
 use crate::tui::tasks::get_task_category_tag;
-use crate::tui::theme::{
-    coral_red, mint_green, muted, orange, trunk, white,
-};
+use crate::tui::theme::{coral_red, mint_green, muted, orange, trunk, white};
 use crate::types::{BenchmarkSuiteResult, BenchmarkTask, IntelligenceProfile, TaskResult};
 
 pub async fn run_benchmark_suite(
@@ -28,7 +26,10 @@ pub async fn run_benchmark_suite(
     println!(
         "\n{}  {}",
         orange("✱"),
-        white(&format!("SPACETIME BENCHMARK SUITE ({} Tasks)", total_tasks))
+        white(&format!(
+            "SPACETIME BENCHMARK SUITE ({} Tasks)",
+            total_tasks
+        ))
     );
     println!(
         "{}  {:<12} {}",
@@ -50,14 +51,9 @@ pub async fn run_benchmark_suite(
         let is_last = index == total_tasks - 1;
         let prefix = if is_last { "└─" } else { "├─" };
 
-        let result = TaskRunner::run_task(
-            task,
-            &agent_profile,
-            &sandbox_image,
-            timeout_override,
-            true,
-        )
-        .await?;
+        let result =
+            TaskRunner::run_task(task, &agent_profile, &sandbox_image, timeout_override, true)
+                .await?;
 
         if result.passed {
             let status_badge = mint_green("pass");
@@ -316,7 +312,8 @@ pub fn generate_harness_insights(
 
     if insights.len() < 3 {
         insights.push(
-            "Context Hygiene: Streamed output stayed compact, avoiding context window saturation.".to_string(),
+            "Context Hygiene: Streamed output stayed compact, avoiding context window saturation."
+                .to_string(),
         );
     }
 
@@ -394,7 +391,10 @@ pub fn print_evaluation_summary(
             "{}  {:<26} {}",
             trunk("│"),
             white("fastest completion:"),
-            muted(&format!("{:.1}s ({})", fastest.duration_secs, fastest.task_id))
+            muted(&format!(
+                "{:.1}s ({})",
+                fastest.duration_secs, fastest.task_id
+            ))
         );
     }
     if let Some(slowest) = slowest_task {
@@ -402,7 +402,10 @@ pub fn print_evaluation_summary(
             "{}  {:<26} {}",
             trunk("│"),
             white("slowest completion:"),
-            muted(&format!("{:.1}s ({})", slowest.duration_secs, slowest.task_id))
+            muted(&format!(
+                "{:.1}s ({})",
+                slowest.duration_secs, slowest.task_id
+            ))
         );
     }
 
@@ -457,7 +460,10 @@ pub fn print_evaluation_summary(
             "{}  {:<26} {}",
             trunk("│"),
             white("total tokens used:"),
-            muted(&format!("{} (prompt: {}, completion: {})", profile.total_tokens, profile.total_prompt_tokens, profile.total_completion_tokens))
+            muted(&format!(
+                "{} (prompt: {}, completion: {})",
+                profile.total_tokens, profile.total_prompt_tokens, profile.total_completion_tokens
+            ))
         );
         println!(
             "{}  {:<26} {}",
@@ -470,7 +476,10 @@ pub fn print_evaluation_summary(
                 "{}  {:<26} {}",
                 trunk("│"),
                 white("cost per resolved task:"),
-                muted(&format!("${:.4} USD / pass", profile.cost_per_resolved_task))
+                muted(&format!(
+                    "${:.4} USD / pass",
+                    profile.cost_per_resolved_task
+                ))
             );
         }
     }
@@ -507,7 +516,11 @@ pub fn print_evaluation_summary(
 
     if !suite_result.harness_insights.is_empty() {
         println!("{}", trunk("│"));
-        println!("{}  {}", orange("✱"), white("harness optimization insights:"));
+        println!(
+            "{}  {}",
+            orange("✱"),
+            white("harness optimization insights:")
+        );
         for insight in &suite_result.harness_insights {
             println!("{}  {} {}", trunk("│"), white("•"), muted(insight));
         }
@@ -690,8 +703,12 @@ mod tests {
             },
         ];
 
-        let fastest = results.iter().min_by(|a, b| a.duration_secs.total_cmp(&b.duration_secs));
-        let slowest = results.iter().max_by(|a, b| a.duration_secs.total_cmp(&b.duration_secs));
+        let fastest = results
+            .iter()
+            .min_by(|a, b| a.duration_secs.total_cmp(&b.duration_secs));
+        let slowest = results
+            .iter()
+            .max_by(|a, b| a.duration_secs.total_cmp(&b.duration_secs));
         assert!(fastest.is_some());
         assert!(slowest.is_some());
     }

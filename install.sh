@@ -54,12 +54,13 @@ if [ "$TARGET" = "unsupported" ]; then
 fi
 
 if [ "$TARGET" = "windows" ]; then
-    log_step "Detected Windows environment. Launching PowerShell installer..."
-    TMP_PS1="$(mktemp "${TEMP:-/tmp}/spacetime-install.XXXXXX.ps1")"
-    curl -fsSL "https://raw.githubusercontent.com/${REPO}/main/install.ps1" -o "$TMP_PS1"
-    powershell.exe -ExecutionPolicy Bypass -File "$TMP_PS1"
-    rm -f "$TMP_PS1"
-    exit 0
+    log_error "Spacetime requires a Linux environment with Docker to run benchmark sandboxes."
+    log_tree "On Windows, please run Spacetime inside WSL 2 (Windows Subsystem for Linux):"
+    echo -e "${TRUNK}│${RESET}"
+    echo -e "${TRUNK}│${RESET}    ${WHITE}1. Open your WSL terminal:${RESET}    ${ORANGE}wsl${RESET}"
+    echo -e "${TRUNK}│${RESET}    ${WHITE}2. Run the installer:${RESET}         ${ORANGE}curl -fsSL https://spacetime.trydecember.com | bash${RESET}"
+    echo -e "${TRUNK}│${RESET}"
+    exit 1
 fi
 
 log_step "installing spacetime for ${TARGET}..."

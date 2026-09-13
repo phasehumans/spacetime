@@ -1,19 +1,19 @@
-use std::collections::HashSet;
-use std::path::Path;
-use std::sync::LazyLock;
-use std::sync::Mutex;
-use std::time::Duration;
-use anyhow::{Context, Result, anyhow};
-use bollard::Docker;
+use anyhow::{anyhow, Context, Result};
 use bollard::container::{
     Config, CreateContainerOptions, LogOutput, RemoveContainerOptions, StartContainerOptions,
     StopContainerOptions,
 };
 use bollard::exec::{CreateExecOptions, StartExecResults};
 use bollard::service::HostConfig;
+use bollard::Docker;
 use colored::*;
 use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
+use std::collections::HashSet;
+use std::path::Path;
+use std::sync::LazyLock;
+use std::sync::Mutex;
+use std::time::Duration;
 use tokio::process::Command as TokioCommand;
 use tokio::time::timeout;
 
@@ -169,7 +169,11 @@ pub async fn ensure_sandbox_image(image_tag: &str, force_rebuild: bool) -> Resul
 
     println!(
         "{}",
-        format!("Sandbox image '{}' not found or rebuild requested. Building...", image_tag).yellow()
+        format!(
+            "Sandbox image '{}' not found or rebuild requested. Building...",
+            image_tag
+        )
+        .yellow()
     );
 
     let dockerfile = if Path::new("Dockerfile").exists() {
@@ -182,7 +186,8 @@ pub async fn ensure_sandbox_image(image_tag: &str, force_rebuild: bool) -> Resul
         ));
     };
 
-    let spinner = create_spinner("Building Docker sandbox image (this may take ~1-2 min on first run)...");
+    let spinner =
+        create_spinner("Building Docker sandbox image (this may take ~1-2 min on first run)...");
 
     let status = TokioCommand::new("docker")
         .arg("build")
@@ -262,7 +267,12 @@ impl EnvironmentManager {
             .docker
             .create_container(options, config)
             .await
-            .with_context(|| format!("Failed to create Docker container with image '{}'", self.image))?;
+            .with_context(|| {
+                format!(
+                    "Failed to create Docker container with image '{}'",
+                    self.image
+                )
+            })?;
 
         self.container_id = Some(container.id.clone());
         register_active_container(&container.id);
@@ -298,7 +308,8 @@ impl EnvironmentManager {
                 cmd: Some(vec![
                     "/bin/bash".to_string(),
                     "-c".to_string(),
-                    "pkill -u agent -9 2>/dev/null || pkill -u 1000 -9 2>/dev/null || true".to_string(),
+                    "pkill -u agent -9 2>/dev/null || pkill -u 1000 -9 2>/dev/null || true"
+                        .to_string(),
                 ]),
                 user: Some("root".to_string()),
                 attach_stdout: Some(false),
@@ -312,14 +323,19 @@ impl EnvironmentManager {
         Ok(())
     }
 
-    pub async fn execute_host_script(&self, host_script_path: &Path, timeout_secs: u64) -> Result<ExecutionResult> {
+    pub async fn execute_host_script(
+        &self,
+        host_script_path: &Path,
+        timeout_secs: u64,
+    ) -> Result<ExecutionResult> {
         let container_id = self
             .container_id
             .as_ref()
             .ok_or_else(|| anyhow!("Container is not initialized"))?;
 
-        let script_content = std::fs::read_to_string(host_script_path)
-            .with_context(|| format!("Failed to read script from {}", host_script_path.display()))?;
+        let script_content = std::fs::read_to_string(host_script_path).with_context(|| {
+            format!("Failed to read script from {}", host_script_path.display())
+        })?;
 
         let start_time = std::time::Instant::now();
 
@@ -409,7 +425,11 @@ impl EnvironmentManager {
         let start_time = std::time::Instant::now();
 
         let exec_config = CreateExecOptions {
-            cmd: Some(vec!["/bin/bash".to_string(), "-c".to_string(), command.to_string()]),
+            cmd: Some(vec![
+                "/bin/bash".to_string(),
+                "-c".to_string(),
+                command.to_string(),
+            ]),
             env: Some(env_vars.to_vec()),
             user: Some("agent".to_string()),
             working_dir: Some("/home/agent".to_string()),

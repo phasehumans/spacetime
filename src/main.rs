@@ -3,15 +3,15 @@ mod docker;
 mod eval;
 mod runner;
 mod task;
-mod types;
 pub mod tui;
+mod types;
 
-use std::path::{Path, PathBuf};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::path::{Path, PathBuf};
 
 use crate::agent::AgentProfile;
-use crate::docker::{DEFAULT_SANDBOX_IMAGE, ensure_sandbox_image};
+use crate::docker::{ensure_sandbox_image, DEFAULT_SANDBOX_IMAGE};
 use crate::eval::run_benchmark_suite;
 use crate::runner::TaskRunner;
 use crate::task::{find_task_by_id, load_all_tasks};
@@ -22,7 +22,7 @@ use crate::tui::theme::{coral_red, muted, orange, print_banner, trunk, white};
 #[command(
     name = "spacetime",
     author = "Chaitanya",
-    version = "0.0.3",
+    version = env!("CARGO_PKG_VERSION"),
     about = "An in-container benchmark arena for terminal AI agents (Claude Code, Gemini CLI, Aider, OpenHands, etc.)",
     long_about = "Spacetime evaluates AI agents by executing them directly inside hermetic Docker sandboxes on realistic Linux sysadmin and terminal tasks."
 )]
@@ -120,7 +120,11 @@ async fn main() -> Result<()> {
         Some(Commands::Info { task_id }) => {
             show_task_info(tasks_dir, &task_id)?;
         }
-        Some(Commands::CreateTask { name, description, tasks_dir: custom_tasks_dir }) => {
+        Some(Commands::CreateTask {
+            name,
+            description,
+            tasks_dir: custom_tasks_dir,
+        }) => {
             create_benchmark_task(&name, description.as_deref(), &custom_tasks_dir)?;
         }
         Some(Commands::Run { task_id }) => {
@@ -135,7 +139,8 @@ async fn main() -> Result<()> {
         None => {
             if let Some(task_id) = cli.task_id {
                 ensure_sandbox_image(&cli.image, cli.force_rebuild).await?;
-                run_single_task(tasks_dir, &task_id, &agent_profile, &cli.image, cli.timeout).await?;
+                run_single_task(tasks_dir, &task_id, &agent_profile, &cli.image, cli.timeout)
+                    .await?;
             } else {
                 run_spacetime_wizard(tasks_dir, cli.image, cli.timeout, cli.force_rebuild).await?;
             }
@@ -146,8 +151,8 @@ async fn main() -> Result<()> {
 }
 
 async fn clean_sandbox_containers() -> Result<()> {
-    use bollard::Docker;
     use bollard::container::{ListContainersOptions, RemoveContainerOptions};
+    use bollard::Docker;
     use std::collections::HashMap;
 
     let docker = Docker::connect_with_local_defaults()?;
@@ -207,7 +212,11 @@ fn list_tasks(tasks_dir: &Path) -> Result<()> {
     println!(
         "\n{}  {}",
         orange("✱"),
-        white(&format!("found {} benchmark tasks in '{}':", tasks.len(), tasks_dir.display()))
+        white(&format!(
+            "found {} benchmark tasks in '{}':",
+            tasks.len(),
+            tasks_dir.display()
+        ))
     );
     println!("{}", trunk("│"));
 
@@ -230,17 +239,39 @@ fn list_tasks(tasks_dir: &Path) -> Result<()> {
 
 fn show_task_info(tasks_dir: &Path, task_id: &str) -> Result<()> {
     let task = find_task_by_id(tasks_dir, task_id)?;
-    println!("\n{}", trunk("────────────────────────────────────────────────────────"));
+    println!(
+        "\n{}",
+        trunk("────────────────────────────────────────────────────────")
+    );
     println!(
         "{}  {}",
         orange("✱"),
         white(&format!("task: {} ({})", task.name, task.id))
     );
-    println!("{}\n", trunk("────────────────────────────────────────────────────────"));
-    println!("  {:<14} {}", muted("description:"), white(&task.description));
-    println!("  {:<14} {}", muted("max turns:"), white(&task.max_turns.to_string()));
-    println!("  {:<14} {}s", muted("timeout:"), white(&task.timeout_secs.to_string()));
-    println!("  {:<14} {}", muted("task dir:"), muted(&task.task_dir.display().to_string()));
+    println!(
+        "{}\n",
+        trunk("────────────────────────────────────────────────────────")
+    );
+    println!(
+        "  {:<14} {}",
+        muted("description:"),
+        white(&task.description)
+    );
+    println!(
+        "  {:<14} {}",
+        muted("max turns:"),
+        white(&task.max_turns.to_string())
+    );
+    println!(
+        "  {:<14} {}s",
+        muted("timeout:"),
+        white(&task.timeout_secs.to_string())
+    );
+    println!(
+        "  {:<14} {}",
+        muted("task dir:"),
+        muted(&task.task_dir.display().to_string())
+    );
 
     println!("\n{}", orange("• prompt given to agent:"));
     println!("  {}", white(&task.prompt));
@@ -278,8 +309,8 @@ async fn run_single_task(
 }
 
 fn create_benchmark_task(name: &str, description: Option<&str>, tasks_dir: &Path) -> Result<()> {
-    use std::fs;
     use crate::tui::theme::mint_green;
+    use std::fs;
 
     let clean_name = name
         .to_lowercase()
@@ -315,7 +346,10 @@ fn create_benchmark_task(name: &str, description: Option<&str>, tasks_dir: &Path
     let target_dir = tasks_dir.join(&folder_name);
 
     if target_dir.exists() {
-        return Err(anyhow::anyhow!("Task directory already exists: {}", target_dir.display()));
+        return Err(anyhow::anyhow!(
+            "Task directory already exists: {}",
+            target_dir.display()
+        ));
     }
 
     fs::create_dir_all(&target_dir)?;
@@ -356,13 +390,33 @@ fn create_benchmark_task(name: &str, description: Option<&str>, tasks_dir: &Path
     }
 
     println!("\n{}", orange("✱  task scaffold created successfully!"));
-    println!("  {:<12} {}", white("folder:"), mint_green(&target_dir.display().to_string()));
+    println!(
+        "  {:<12} {}",
+        white("folder:"),
+        mint_green(&target_dir.display().to_string())
+    );
     println!("  {:<12} {}", white("task id:"), white(&folder_name));
-    println!("  {:<12} {}", white("prompt:"), muted(&target_dir.join("prompt.txt").display().to_string()));
-    println!("  {:<12} {}", white("setup:"), muted(&target_dir.join("setup.sh").display().to_string()));
-    println!("  {:<12} {}", white("test:"), muted(&target_dir.join("test.sh").display().to_string()));
+    println!(
+        "  {:<12} {}",
+        white("prompt:"),
+        muted(&target_dir.join("prompt.txt").display().to_string())
+    );
+    println!(
+        "  {:<12} {}",
+        white("setup:"),
+        muted(&target_dir.join("setup.sh").display().to_string())
+    );
+    println!(
+        "  {:<12} {}",
+        white("test:"),
+        muted(&target_dir.join("test.sh").display().to_string())
+    );
     println!("\n{}", trunk("│  test your new task with:"));
-    println!("{}  {}", trunk("│"), white(&format!("spacetime run {}", folder_name)));
+    println!(
+        "{}  {}",
+        trunk("│"),
+        white(&format!("spacetime run {}", folder_name))
+    );
     println!();
 
     Ok(())

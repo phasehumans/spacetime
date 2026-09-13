@@ -3,8 +3,8 @@ pub mod tasks;
 pub mod theme;
 pub mod wizard;
 
-use std::path::Path;
 use anyhow::Result;
+use std::path::Path;
 
 use crate::docker::ensure_sandbox_image;
 use crate::task::load_all_tasks;
@@ -33,14 +33,8 @@ pub async fn run_spacetime_wizard(
 
     ensure_sandbox_image(&image, force_rebuild).await?;
 
-    let res = execute_benchmark_suite_tui(
-        selected_tasks,
-        agent_profile,
-        image,
-        timeout,
-        None,
-    )
-    .await;
+    let res =
+        execute_benchmark_suite_tui(selected_tasks, agent_profile, image, timeout, None).await;
 
     show_cursor();
     res?;

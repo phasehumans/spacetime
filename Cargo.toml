@@ -4,6 +4,11 @@ version = "0.0.3"
 edition = "2021"
 description = "a benchmark for evaluating coding agents on interactive terminal tasks"
 authors = ["Chaitanya"]
+license = "MIT"
+repository = "https://github.com/phasehumans/spacetime"
+readme = "README.md"
+keywords = ["benchmark", "ai-agents", "evaluation", "docker", "llm"]
+categories = ["development-tools", "command-line-utilities"]
 
 [dependencies]
 tokio = { version = "1.43", features = ["full", "signal"] }
