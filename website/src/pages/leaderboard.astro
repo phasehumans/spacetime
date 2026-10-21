@@ -1,0 +1,119 @@
+---
+import Base from "../components/Base.astro";
+import Board from "../components/Board.astro";
+import leaderboard from "../data/leaderboard.json";
+
+const groups = leaderboard.groups;
+const hasRuns = groups.length > 0;
+const generated = new Date(leaderboard.generated_at).toISOString().slice(0, 10);
+---
+
+<Base
+  title="leaderboard — spacetime"
+  description="Coding agents ranked on the spacetime terminal benchmark by pass rate, cost per resolved task and speed."
+>
+  <header class="hero" style="padding-bottom:24px">
+    <div class="eyebrow">leaderboard · {leaderboard.current_taskset.size} tasks</div>
+    <h1>Terminal agent rankings</h1>
+    <p class="lede">
+      Ranked by <strong>pass rate</strong>, then cost per resolved task, then average
+      task time. Only runs from the same taskset are compared — a score means
+      nothing without the suite it was produced on.
+    </p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="value">{leaderboard.totals.runs}</div>
+      <div class="label">accepted runs</div>
+    </div>
+    <div class="stat">
+      <div class="value">{leaderboard.totals.verified}</div>
+      <div class="label">verified</div>
+    </div>
+    <div class="stat">
+      <div class="value">{leaderboard.totals.community}</div>
+      <div class="label">self-reported</div>
+    </div>
+    <div class="stat">
+      <div class="value">{leaderboard.current_taskset.id.split("-")[1]}</div>
+      <div class="label">tasks in current suite</div>
+    </div>
+  </div>
+
+  {
+    hasRuns ? (
+      <section>
+        {groups.map((group) => (
+          <div>
+            <div class="taskset-label">
+              <span>taskset {group.taskset_id}</span>
+              <span>{group.size} tasks</span>
+              {group.is_current && <span class="current">current</span>}
+              {!group.is_current && <span>historical — not comparable to current</span>}
+            </div>
+            <Board rows={group.rows} />
+          </div>
+        ))}
+      </section>
+    ) : (
+      <section>
+        <div class="empty">
+          <h3>No accepted runs yet</h3>
+          <p>
+            There is nothing to rank until someone submits a report. Be the first —
+            the suite runs locally, the submission is a file, and CI checks the math.
+          </p>
+          <a class="button primary" href="#submit">how to submit</a>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="prose" id="submit">
+    <div class="section-head">
+      <h2>submit a run</h2>
+      <span class="section-note">report → file → pull request</span>
+    </div>
+    <pre class="terminal"><span class="c"># 1. run the full suite (Docker required)</span>
+<span class="o">$</span> spacetime eval-all
+<span class="c">#    writes results/spacetime_results_&lt;timestamp&gt;.json</span>
+
+<span class="c"># 2. turn the report into a submission</span>
+<span class="o">$</span> spacetime submit --report results/spacetime_results_*.json --user your-handle
+
+<span class="c"># 3. open the pull request — CI validates it</span>
+<span class="o">$</span> git checkout -b leaderboard/your-agent
+<span class="o">$</span> git add leaderboard/submissions
+<span class="o">$</span> git commit -m "leaderboard: add your-agent run"
+<span class="o">$</span> git push -u origin HEAD &amp;&amp; gh pr create --fill</pre>
+  </section>
+
+  <section class="prose">
+    <div class="section-head">
+      <h2>how rows are checked</h2>
+    </div>
+    <p>
+      <strong>Totals are recomputed.</strong> CI recounts passed and total from the
+      per-task results in your file, and rejects the submission if the headline
+      numbers disagree. Hand-editing a pass rate only gets the pull request closed.
+    </p>
+    <p>
+      <strong>Tasksets must match.</strong> Every report carries a digest of the task
+      prompts, setup scripts, assertions and limits it ran against. Changing a single
+      <code>test.sh</code> produces a new taskset, and older runs move to a historical
+      group instead of silently competing with newer ones.
+    </p>
+    <p>
+      <strong>Tiers are honest.</strong> <span class="tier community">community</span>
+      means the submitter ran it and we have not reproduced it.
+      <span class="tier verified">verified</span> means a maintainer or CI re-ran the
+      suite on a pinned commit and container image. Both appear in the table; the
+      badge travels with the number.
+    </p>
+    <p style="margin-top:16px;color:var(--text-dim);font-size:12.5px">
+      Generated {generated} · taskset {leaderboard.current_taskset.id} ·
+      {leaderboard.ranking}
+    </p>
+  </section>
+</Base>

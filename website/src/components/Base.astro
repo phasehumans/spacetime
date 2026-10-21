@@ -1,0 +1,50 @@
+---
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#08080a" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="nav">
+        <a class="brand" href="/">
+          <img src="/logo.svg" alt="spacetime" />
+        </a>
+        <div class="nav-links">
+          <a href="/leaderboard">leaderboard</a>
+          <a href="https://github.com/phasehumans/spacetime" target="_blank" rel="noreferrer">
+            github
+          </a>
+        </div>
+      </nav>
+      <slot />
+      <footer>
+        <span>spacetime — a benchmark for coding agents on interactive terminal tasks</span>
+        <span>
+          <a href="https://github.com/phasehumans/spacetime" target="_blank" rel="noreferrer">
+            github.com/phasehumans/spacetime
+          </a>
+        </span>
+      </footer>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  @import "../styles/global.css";
+</style>

@@ -122,9 +122,17 @@ pub async fn execute_benchmark_suite_tui(
     let intelligence_profile = compute_intelligence_profile(&tasks, &results);
     let harness_insights = generate_harness_insights(&tasks, &results, &intelligence_profile);
 
+    let taskset = crate::taskset::compute(&tasks)?;
+
     let suite_result = BenchmarkSuiteResult {
         timestamp,
         agent: agent_name,
+        harness: agent_profile.harness.to_string(),
+        model: agent_profile.model.clone(),
+        spacetime_version: env!("CARGO_PKG_VERSION").to_string(),
+        taskset_id: taskset.id.clone(),
+        taskset_hash: taskset.hash.clone(),
+        taskset_size: taskset.size,
         sandbox: sandbox_image,
         total_tasks,
         passed_tasks,
