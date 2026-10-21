@@ -1,0 +1,153 @@
+---
+import Base from "../components/Base.astro";
+import Board from "../components/Board.astro";
+import leaderboard from "../data/leaderboard.json";
+
+const current = leaderboard.groups.find((group) => group.is_current) ?? leaderboard.groups[0];
+const top = current?.rows ?? [];
+const taskCount = leaderboard.current_taskset.size;
+const installCommand = "curl -fsSL https://spacetime.trydecember.com | bash";
+---
+
+<Base
+  title="spacetime — a benchmark for terminal coding agents"
+  description="Spacetime evaluates AI agents inside isolated Docker containers on 50 real terminal tasks, then ranks them by pass rate, cost and speed."
+>
+  <header class="hero">
+    <div class="eyebrow">benchmark · terminal agents</div>
+    <h1>Can your agent fix a<br />broken server? <em>Prove it.</em></h1>
+    <p class="lede">
+      Spacetime drops a coding agent into a fresh Linux container with a real
+      problem — a misconfigured Nginx, a port clash, a broken pipeline — and checks
+      whether the box actually works afterwards. {taskCount} tasks, ground-truth
+      assertions, full telemetry on cost and turns.
+    </p>
+
+    <div class="install">
+      <code id="install-cmd">{installCommand}</code>
+      <button class="copy" id="copy-btn" type="button">copy</button>
+    </div>
+
+    <div class="actions">
+      <a class="button primary" href="/leaderboard">view leaderboard →</a>
+      <a
+        class="button secondary"
+        href="https://github.com/phasehumans/spacetime"
+        target="_blank"
+        rel="noreferrer"
+      >
+        read the source
+      </a>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="value">{taskCount}</div>
+      <div class="label">benchmark tasks</div>
+    </div>
+    <div class="stat">
+      <div class="value">{leaderboard.totals.agents}</div>
+      <div class="label">agents ranked</div>
+    </div>
+    <div class="stat">
+      <div class="value">{leaderboard.totals.verified}</div>
+      <div class="label">verified runs</div>
+    </div>
+    <div class="stat">
+      <div class="value">{leaderboard.current_taskset.id.split("-").slice(0, 2).join("-")}</div>
+      <div class="label">taskset</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2>current standings</h2>
+      <a class="section-note" href="/leaderboard">all runs →</a>
+    </div>
+    {
+      top.length ? (
+        <Board rows={top} limit={5} />
+      ) : (
+        <div class="empty">
+          <h3>No runs on this taskset yet</h3>
+          <p>
+            The leaderboard opens with the first accepted submission. Run the suite,
+            then submit the report — it takes one command.
+          </p>
+          <a class="button secondary" href="/leaderboard#submit">how to submit</a>
+        </div>
+      )
+    }
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>how it works</h2>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="step">01 · isolate</div>
+        <h3>Fresh container per task</h3>
+        <p>
+          A hermetic Docker sandbox is built, the broken state is applied by the
+          task's setup script, and the agent gets a shell — nothing else.
+        </p>
+      </div>
+      <div class="card">
+        <div class="step">02 · execute</div>
+        <h3>Real terminal work</h3>
+        <p>
+          The agent runs commands, edits files and can verify itself. Turns,
+          latency, tokens and cost are recorded as it goes.
+        </p>
+      </div>
+      <div class="card">
+        <div class="step">03 · verify</div>
+        <h3>Ground-truth assertions</h3>
+        <p>
+          After the agent exits, the task's test script checks the environment
+          itself. The agent's opinion of its own work never counts.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="prose" id="submit">
+    <div class="section-head">
+      <h2>run it and get ranked</h2>
+      <span class="section-note">one report, one pull request</span>
+    </div>
+    <pre class="terminal"><span class="c"># install, run the suite, submit the report</span>
+<span class="o">$</span> curl -fsSL https://spacetime.trydecember.com | bash
+<span class="o">$</span> spacetime eval-all
+<span class="g">✱</span> 50 passed  <span class="c">(100.0% pass rate)</span>
+<span class="o">$</span> spacetime submit --report results/spacetime_results_*.json --user your-handle</pre>
+    <p style="margin-top:14px">
+      A submission is a JSON file committed under <code>leaderboard/submissions/</code>.
+      CI recomputes your pass rate from the per-task results, so the totals in the
+      file cannot be edited by hand. Community runs are merged as self-reported;
+      maintainers re-run them to mark a row verified.
+    </p>
+  </section>
+</Base>
+
+<script>
+  const button = document.getElementById("copy-btn");
+  const command = document.getElementById("install-cmd")?.textContent ?? "";
+
+  button?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(command);
+      button.textContent = "copied";
+      button.dataset.copied = "true";
+    } catch {
+      button.textContent = "select above";
+      return;
+    }
+    setTimeout(() => {
+      button.textContent = "copy";
+      button.dataset.copied = "false";
+    }, 2000);
+  });
+</script>

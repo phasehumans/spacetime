@@ -1,0 +1,17 @@
+{
+  "name": "spacetime-website",
+  "version": "0.0.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node ../scripts/validate-leaderboard.mjs --out src/data/leaderboard.json",
+    "predev": "npm run validate",
+    "dev": "astro dev",
+    "prebuild": "npm run validate",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^5.18.2"
+  }
+}

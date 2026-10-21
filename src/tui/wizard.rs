@@ -131,7 +131,7 @@ pub fn run_wizard_navigation(
                             "bash /workspace/agent.sh \"{prompt}\"",
                             muted("[shell script]")
                         ),
-                        format!(" custom command string..."),
+                        " custom command string...".to_string(),
                     ];
 
                     let template_choice = match Select::new(
@@ -470,7 +470,7 @@ pub fn run_wizard_navigation(
             WizardStep::ConfirmBenchmark { profile, tasks } => {
                 let confirm_options = vec![
                     format!(" run benchmark ({} tasks)", tasks.len()),
-                    format!(" cancel"),
+                    " cancel".to_string(),
                 ];
 
                 let choice = match Select::new("run benchmark suite?\n", confirm_options)

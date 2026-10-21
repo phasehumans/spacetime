@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Public leaderboard for benchmark results: a static Astro site in [`website/`](website/) rendering submitted runs, `spacetime submit` to turn a report into a submission, and `spacetime leaderboard` to render the committed board in the terminal.
+- Taskset identity on every report (`taskset_id`, `taskset_hash`, `taskset_size`) so runs produced against different task suites are never ranked against each other, plus `harness`, `model`, and `spacetime_version` fields for leaderboard rows.
+- Submission validation in [`scripts/validate-leaderboard.mjs`](scripts/validate-leaderboard.mjs): recounts pass rate from per-task results, checks taskset digest parity with [`src/taskset.rs`](src/taskset.rs), and rejects duplicate agent/model rows. Runs in CI.
+- Leaderboard CI job that validates submissions and builds the website.
+- Root [`vercel.json`](vercel.json) restoring the site deployment and the curl-user-agent redirect to [`install.sh`](install.sh).
 - GitHub Actions CI pipeline ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) testing cargo check, unit/integration tests, clippy, formatting, and sandbox Docker build.
 - Crate metadata in [`Cargo.toml`](Cargo.toml) (`license`, `repository`, `readme`, `keywords`, `categories`).
 - Root [`logo.svg`](logo.svg) asset.
@@ -18,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Redundant clippy pricing condition in [`src/agent/profile.rs`](src/agent/profile.rs).
+- `useless_format` clippy warnings in [`src/tui/wizard.rs`](src/tui/wizard.rs) that failed `cargo clippy -- -D warnings` on the current stable toolchain.
 
 ## [0.0.3] - 2026-09-13
 

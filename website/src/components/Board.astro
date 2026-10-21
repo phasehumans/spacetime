@@ -1,0 +1,52 @@
+---
+interface Row {
+  agent: string;
+  model: string | null;
+  tier: string;
+  passed: number;
+  total: number;
+  pass_rate: number;
+  cost_per_resolved_task: number | null;
+  avg_task_secs: number;
+}
+
+interface Props {
+  rows: Row[];
+  limit?: number;
+  startRank?: number;
+}
+
+const { rows, limit, startRank = 1 } = Astro.props;
+const visible = limit ? rows.slice(0, limit) : rows;
+
+const money = (value: number | null) =>
+  value == null || value === 0 ? "—" : `$${value.toFixed(3)}`;
+---
+
+<div class="board">
+  <div class="board-head">
+    <span>#</span>
+    <span>agent</span>
+    <span>pass rate</span>
+    <span class="hide-sm">cost / solved</span>
+    <span class="hide-sm">avg task</span>
+    <span style="justify-self:end">tier</span>
+  </div>
+  {
+    visible.map((row, index) => (
+      <div class:list={["row", { top: startRank + index <= 3 }]}>
+        <span class="rank">{startRank + index}</span>
+        <span class="agent">
+          <span class="name">{row.agent}</span>
+          {row.model && <span class="model">{row.model}</span>}
+        </span>
+        <span class="num pass">
+          {row.pass_rate.toFixed(1)}% <span class="of">({row.passed}/{row.total})</span>
+        </span>
+        <span class="num hide-sm">{money(row.cost_per_resolved_task)}</span>
+        <span class="num hide-sm">{row.avg_task_secs.toFixed(1)}s</span>
+        <span class:list={["tier", row.tier]}>{row.tier}</span>
+      </div>
+    ))
+  }
+</div>
