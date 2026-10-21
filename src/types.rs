@@ -66,10 +66,27 @@ pub struct IntelligenceProfile {
     pub cost_per_resolved_task: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct BenchmarkSuiteResult {
     pub timestamp: String,
     pub agent: String,
+    /// Harness name without the model, so leaderboard rows can be keyed on
+    /// agent + model instead of parsing the composite `agent` label.
+    #[serde(default)]
+    pub harness: String,
+    #[serde(default)]
+    pub model: Option<String>,
+    /// CLI version that produced the report; submissions from different
+    /// versions are not assumed to have run the suite identically.
+    #[serde(default)]
+    pub spacetime_version: String,
+    /// Suite identity, see `taskset`. Empty for reports written before 0.0.4.
+    #[serde(default)]
+    pub taskset_id: String,
+    #[serde(default)]
+    pub taskset_hash: String,
+    #[serde(default)]
+    pub taskset_size: usize,
     #[serde(default)]
     pub sandbox: String,
     pub total_tasks: usize,

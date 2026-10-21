@@ -1,0 +1,10 @@
+{
+  "name": "spacetime",
+  "version": "0.0.3",
+  "private": true,
+  "description": "Benchmark site and leaderboard for spacetime",
+  "scripts": {
+    "build": "npm --prefix website run build",
+    "dev": "npm --prefix website run dev"
+  }
+}

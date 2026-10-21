@@ -2,7 +2,9 @@ mod agent;
 mod docker;
 mod eval;
 mod runner;
+mod submit;
 mod task;
+mod taskset;
 pub mod tui;
 mod types;
 
@@ -85,6 +87,46 @@ enum Commands {
         #[arg(short = 't', long, default_value = "tasks")]
         tasks_dir: PathBuf,
     },
+
+    /// Turn a benchmark report into a leaderboard submission file
+    Submit {
+        /// Report produced by `spacetime eval-all`
+        #[arg(short, long)]
+        report: PathBuf,
+
+        /// GitHub handle credited with the run
+        #[arg(long)]
+        user: Option<String>,
+
+        /// community (self-reported) or verified (maintainer re-run)
+        #[arg(long, default_value = "community")]
+        tier: String,
+
+        /// Link to logs, a repo, or a recording backing the run
+        #[arg(long)]
+        source: Option<String>,
+
+        /// Free-form note shown alongside the row
+        #[arg(long)]
+        notes: Option<String>,
+
+        #[arg(long, default_value = submit::DEFAULT_SUBMISSIONS_DIR)]
+        out_dir: PathBuf,
+    },
+
+    /// Render the leaderboard from committed submissions
+    Leaderboard {
+        #[arg(long, default_value = submit::DEFAULT_SUBMISSIONS_DIR)]
+        dir: PathBuf,
+
+        /// Print rows as JSON
+        #[arg(long)]
+        json: bool,
+
+        /// Only show one taskset id (e.g. v1-50-1a2b3c4d)
+        #[arg(long)]
+        taskset: Option<String>,
+    },
 }
 
 #[tokio::main]
@@ -131,6 +173,28 @@ async fn main() -> Result<()> {
             ensure_sandbox_image(&cli.image, cli.force_rebuild).await?;
             run_single_task(tasks_dir, &task_id, &agent_profile, &cli.image, cli.timeout).await?;
         }
+        Some(Commands::Submit {
+            report,
+            user,
+            tier,
+            source,
+            notes,
+            out_dir,
+        }) => {
+            let tier = submit::Tier::parse(&tier)?;
+            let submitted_by = user.unwrap_or_else(default_submitter);
+            submit::submit(submit::SubmitOptions {
+                report,
+                submissions_dir: out_dir,
+                submitted_by,
+                tier,
+                source_url: source,
+                notes,
+            })?;
+        }
+        Some(Commands::Leaderboard { dir, json, taskset }) => {
+            submit::render_leaderboard(&dir, json, taskset)?;
+        }
         Some(Commands::EvalAll { output }) => {
             ensure_sandbox_image(&cli.image, cli.force_rebuild).await?;
             let tasks = load_all_tasks(tasks_dir)?;
@@ -148,6 +212,25 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Best-effort identity for the submission row: the GitHub handle when `gh` is
+/// configured, otherwise the local git name or login.
+fn default_submitter() -> String {
+    for (program, args) in [
+        ("gh", vec!["api", "user", "-q", ".login"]),
+        ("git", vec!["config", "user.name"]),
+    ] {
+        if let Ok(output) = std::process::Command::new(program).args(&args).output() {
+            if output.status.success() {
+                let name = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !name.is_empty() {
+                    return name;
+                }
+            }
+        }
+    }
+    std::env::var("USER").unwrap_or_else(|_| "anonymous".to_string())
 }
 
 async fn clean_sandbox_containers() -> Result<()> {

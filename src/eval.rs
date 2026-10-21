@@ -102,9 +102,17 @@ pub async fn run_benchmark_suite(
     let intelligence_profile = compute_intelligence_profile(&tasks, &results);
     let harness_insights = generate_harness_insights(&tasks, &results, &intelligence_profile);
 
+    let taskset = crate::taskset::compute(&tasks)?;
+
     let suite_result = BenchmarkSuiteResult {
         timestamp,
         agent: agent_name,
+        harness: agent_profile.harness.to_string(),
+        model: agent_profile.model.clone(),
+        spacetime_version: env!("CARGO_PKG_VERSION").to_string(),
+        taskset_id: taskset.id.clone(),
+        taskset_hash: taskset.hash.clone(),
+        taskset_size: taskset.size,
         sandbox: sandbox_image,
         total_tasks,
         passed_tasks,
@@ -545,6 +553,8 @@ mod tests {
         let suite = BenchmarkSuiteResult {
             timestamp: "2026-08-19T19:00:00Z".to_string(),
             agent: "Claude Code".to_string(),
+            harness: "Claude Code".to_string(),
+            taskset_id: "v1-2-1a2b3c4d".to_string(),
             total_tasks: 2,
             passed_tasks: 1,
             failed_tasks: 1,
@@ -586,6 +596,7 @@ mod tests {
             sandbox: "spacetime-sandbox:latest".to_string(),
             intelligence_profile: None,
             harness_insights: vec![],
+            ..Default::default()
         };
 
         let json = serde_json::to_string(&suite).unwrap();
