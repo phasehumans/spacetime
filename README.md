@@ -57,33 +57,18 @@ sequenceDiagram
     Telemetry-->>CLI: Render scorecard & save JSON report
 ```
 
-### Running Evaluations
-
-```bash
-spacetime list              # List all benchmark tasks
-spacetime info <task-id>    # Inspect a specific task
-spacetime run <task-id>     # Evaluate agent on a single task
-spacetime eval-all          # Evaluate across all 50 tasks
-```
-
-### Sandbox Management
-
-Helper scripts are located under [`scripts/`](scripts/):
-
-```bash
-./scripts/sandbox.sh start       # Build or verify the Docker sandbox image
-./scripts/sandbox.sh status      # Check active container status
-./scripts/sandbox.sh stop        # Force-stop and purge running containers
-./scripts/sandbox.sh shell       # Launch an interactive debug shell in the sandbox
-```
-
-### Building from Source
+### Quickstart
 
 ```bash
 make
-make test
-sudo make install
+./spacetime list
+./spacetime run 001-nginx-config --agent claude
+./spacetime eval-all --agent claude
 ```
 
-To contribute or add tasks, open a PR. For help, reach out at team@trydecember.com.
+Run unit tests:
+
+```bash
+make test
+```
 

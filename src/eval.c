@@ -214,7 +214,7 @@ int eval_run_suite(const BenchmarkTask *tasks, size_t count, const AgentProfile 
     strftime(out_suite->timestamp, sizeof(out_suite->timestamp), "%Y-%m-%dT%H:%M:%SZ", tm);
 
     snprintf(out_suite->agent, sizeof(out_suite->agent), "%s", agent->name);
-    snprintf(out_suite->harness, sizeof(out_suite->harness), "%s", agent->name);
+    snprintf(out_suite->harness, sizeof(out_suite->harness), "%.*s", (int)(sizeof(out_suite->harness) - 1), agent->name);
     snprintf(out_suite->model, sizeof(out_suite->model), "%s", agent->model);
     snprintf(out_suite->spacetime_version, sizeof(out_suite->spacetime_version), "%s", SPACETIME_VERSION);
     snprintf(out_suite->sandbox, sizeof(out_suite->sandbox), "%s", image);

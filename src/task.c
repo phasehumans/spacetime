@@ -56,10 +56,10 @@ static int load_task_from_dir(const char *dir_path, BenchmarkTask *task) {
     const char *folder_name = strrchr(dir_path, '/');
     folder_name = folder_name ? folder_name + 1 : dir_path;
 
-    snprintf(task->id, sizeof(task->id), "%s", folder_name);
-    snprintf(task->name, sizeof(task->name), "%s", folder_name);
+    snprintf(task->id, sizeof(task->id), "%.*s", (int)(sizeof(task->id) - 1), folder_name);
+    snprintf(task->name, sizeof(task->name), "%.*s", (int)(sizeof(task->name) - 1), folder_name);
     snprintf(task->base_image, sizeof(task->base_image), "%s", "ubuntu:22.04");
-    snprintf(task->task_dir, sizeof(task->task_dir), "%s", dir_path);
+    snprintf(task->task_dir, sizeof(task->task_dir), "%.*s", (int)(sizeof(task->task_dir) - 1), dir_path);
     task->max_turns = 15;
     task->timeout_secs = 30;
 
