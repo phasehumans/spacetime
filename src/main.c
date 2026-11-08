@@ -33,8 +33,6 @@ static void print_usage(const char *prog) {
     printf("    info <task-id>      Show detailed information and objective for a task\n");
     printf("    clean               Remove any dangling or active spacetime sandbox containers\n");
     printf("    build-image         Build the sandbox Docker image\n");
-    printf("    submit              Turn a benchmark report into a leaderboard submission\n");
-    printf("    leaderboard         View ranked leaderboard results\n");
     printf("    help                Print this help menu\n\n");
     printf("OPTIONS:\n");
     printf("    -a, --agent <name>      Harness name (claude, gemini, agy, codex, aider)\n");
@@ -199,56 +197,6 @@ int main(int argc, char **argv) {
         free_tasks(tasks, count);
         free_benchmark_suite_result(&suite);
         return 0;
-    }
-
-    if (strcmp(subcmd, "submit") == 0) {
-        char *report_path = NULL;
-        char *user = NULL;
-        char *tier = "community";
-        char *source = NULL;
-        char *notes = NULL;
-        char *out_dir = DEFAULT_SUBMISSIONS_DIR;
-
-        for (int i = optind; i < argc; i++) {
-            if ((strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--report") == 0) && i + 1 < argc) {
-                report_path = argv[++i];
-            } else if (strcmp(argv[i], "--user") == 0 && i + 1 < argc) {
-                user = argv[++i];
-            } else if (strcmp(argv[i], "--tier") == 0 && i + 1 < argc) {
-                tier = argv[++i];
-            } else if (strcmp(argv[i], "--source") == 0 && i + 1 < argc) {
-                source = argv[++i];
-            } else if (strcmp(argv[i], "--notes") == 0 && i + 1 < argc) {
-                notes = argv[++i];
-            } else if (strcmp(argv[i], "--out-dir") == 0 && i + 1 < argc) {
-                out_dir = argv[++i];
-            }
-        }
-
-        if (!report_path) {
-            fprintf(stderr, "Error: --report <path> is required for submit\n");
-            return 1;
-        }
-
-        return submit_create(report_path, user, tier, source, notes, out_dir);
-    }
-
-    if (strcmp(subcmd, "leaderboard") == 0) {
-        char *dir = DEFAULT_SUBMISSIONS_DIR;
-        bool json_mode = false;
-        char *taskset_filter = NULL;
-
-        for (int i = optind; i < argc; i++) {
-            if (strcmp(argv[i], "--dir") == 0 && i + 1 < argc) {
-                dir = argv[++i];
-            } else if (strcmp(argv[i], "--json") == 0) {
-                json_mode = true;
-            } else if (strcmp(argv[i], "--taskset") == 0 && i + 1 < argc) {
-                taskset_filter = argv[++i];
-            }
-        }
-
-        return leaderboard_render(dir, json_mode, taskset_filter);
     }
 
     if (strcmp(subcmd, "help") == 0 || strcmp(subcmd, "--help") == 0) {

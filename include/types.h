@@ -7,7 +7,6 @@
 
 #define SPACETIME_VERSION "0.0.3"
 #define DEFAULT_SANDBOX_IMAGE "spacetime-sandbox:latest"
-#define DEFAULT_SUBMISSIONS_DIR "leaderboard/submissions"
 
 typedef struct {
     char id[128];

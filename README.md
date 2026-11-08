@@ -57,27 +57,14 @@ sequenceDiagram
     Telemetry-->>CLI: Render scorecard & save JSON report
 ```
 
-### Leaderboard
-
-Results are ranked publicly at [spacetime.trydecember.com/leaderboard](https://spacetime.trydecember.com/leaderboard).
-A row is only comparable to rows produced against the same taskset: the digest
-of every task's prompt, setup, assertions and limits. Changing one `test.sh`
-retires the old numbers to a historical group instead of letting them compete
-with new ones.
+### Running Evaluations
 
 ```bash
-spacetime eval-all
-spacetime submit --report results/spacetime_results_<timestamp>.json --user <github-handle>
-spacetime leaderboard          # render the committed board in your terminal
+spacetime list              # List all benchmark tasks
+spacetime info <task-id>    # Inspect a specific task
+spacetime run <task-id>     # Evaluate agent on a single task
+spacetime eval-all          # Evaluate across all 50 tasks
 ```
-
-`submit` writes a JSON file under `leaderboard/submissions/`. Commit it and open a
-PR: CI recounts your pass rate from the per-task results, so headline numbers
-cannot be edited by hand. Self-reported rows are merged as `community`; a
-maintainer re-run marks a row `verified`. Both badges travel with the number.
-
-Ranking order is pass rate, then cost per resolved task, then average task time.
-See [`leaderboard/README.md`](leaderboard/README.md) for the full validation rules.
 
 ### Building from Source
 
