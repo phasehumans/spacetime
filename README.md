@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.svg" alt="spacetime" height="30" />
+  <img src="assets/logo.svg" alt="spacetime" height="30" />
 </p>
 
 <h4 align="center">a benchmark for evaluating coding agents on interactive terminal tasks</h4>
@@ -9,7 +9,7 @@ Spacetime evaluates AI agents inside isolated Docker containers on real terminal
 It runs agents through 50 embedded Linux environments covering sysadmin, networking, debugging, and data pipelines. Beyond basic pass/fail checks, Spacetime captures deep telemetry across the execution lifecycle: tracking pass rates, latency, turn efficiency, error recovery, token economics & cost, and self-verification behavior.
 
 ```bash
-curl -fsSL https://spacetime.trydecember.com | bash
+curl -fsSL https://raw.githubusercontent.com/phasehumans/spacetime/main/scripts/install.sh | bash
 ```
 
 
@@ -64,6 +64,17 @@ spacetime list              # List all benchmark tasks
 spacetime info <task-id>    # Inspect a specific task
 spacetime run <task-id>     # Evaluate agent on a single task
 spacetime eval-all          # Evaluate across all 50 tasks
+```
+
+### Sandbox Management
+
+Helper scripts are located under [`scripts/`](scripts/):
+
+```bash
+./scripts/sandbox.sh start       # Build or verify the Docker sandbox image
+./scripts/sandbox.sh status      # Check active container status
+./scripts/sandbox.sh stop        # Force-stop and purge running containers
+./scripts/sandbox.sh shell       # Launch an interactive debug shell in the sandbox
 ```
 
 ### Building from Source

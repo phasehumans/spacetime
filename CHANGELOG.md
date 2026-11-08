@@ -12,14 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Taskset identity on every report (`taskset_id`, `taskset_hash`, `taskset_size`) so runs produced against different task suites are never ranked against each other, plus `harness`, `model`, and `spacetime_version` fields for leaderboard rows.
 - Submission validation in [`scripts/validate-leaderboard.mjs`](scripts/validate-leaderboard.mjs): recounts pass rate from per-task results, checks taskset digest parity with [`src/taskset.rs`](src/taskset.rs), and rejects duplicate agent/model rows. Runs in CI.
 - Leaderboard CI job that validates submissions and builds the website.
-- Root [`vercel.json`](vercel.json) restoring the site deployment and the curl-user-agent redirect to [`install.sh`](install.sh).
+- Root [`vercel.json`](vercel.json) restoring the site deployment and the curl-user-agent redirect to [`scripts/install.sh`](scripts/install.sh).
 - GitHub Actions CI pipeline ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) testing cargo check, unit/integration tests, clippy, formatting, and sandbox Docker build.
 - Crate metadata in [`Cargo.toml`](Cargo.toml) (`license`, `repository`, `readme`, `keywords`, `categories`).
-- Root [`logo.svg`](logo.svg) asset.
+- Root [`assets/logo.svg`](assets/logo.svg) asset.
 
 ### Changed
 - CLI version is now dynamically synchronized with `Cargo.toml` using `env!("CARGO_PKG_VERSION")`.
-- Improved Windows detection in [`install.sh`](install.sh) with clear instructions to run inside WSL 2.
+- Improved Windows detection in [`scripts/install.sh`](scripts/install.sh) with clear instructions to run inside WSL 2.
 
 ### Fixed
 - Redundant clippy pricing condition in [`src/agent/profile.rs`](src/agent/profile.rs).
@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - TUI display glitch and terminal cursor state management on exit.
-- Hardened sandbox script ([`sandbox.sh`](sandbox.sh)) for process cleanup and container lifecycle management.
+- Hardened sandbox script ([`scripts/sandbox.sh`](scripts/sandbox.sh)) for process cleanup and container lifecycle management.
 
 ## [0.0.2] - 2026-08-20
 
@@ -56,4 +56,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hermetic Docker container isolation for terminal coding agents.
 - Interactive terminal wizard (`spacetime tui`) and CLI task runner.
 - Binary embedded benchmark task suite via `include_dir`.
-- One-liner curl installer script ([`install.sh`](install.sh)) with pre-compiled GitHub Release binary distribution.
+- One-liner curl installer script ([`scripts/install.sh`](scripts/install.sh)) with pre-compiled GitHub Release binary distribution.

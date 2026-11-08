@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE_NAME="spacetime-sandbox:latest"
-DOCKERFILE="Dockerfile"
+DOCKERFILE="$REPO_ROOT/Dockerfile"
 
 ORANGE="\033[38;2;251;146;60m"
 GREEN="\033[38;2;110;231;183m"
@@ -32,7 +34,7 @@ cmd_start() {
     fi
 
     log_tree "building ${IMAGE_NAME}..."
-    docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" .
+    docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" "$REPO_ROOT"
     echo -e "${TRUNK}│${RESET}"
     log_info "sandbox image ${WHITE}${IMAGE_NAME}${RESET} ready"
 }
@@ -115,7 +117,7 @@ case "$ACTION" in
     -h|--help|help)
         echo -e "${ORANGE}✱${RESET}  ${WHITE}SPACETIME Sandbox Manager${RESET}"
         echo -e "${TRUNK}│${RESET}"
-        echo -e "${TRUNK}│${RESET}  ${WHITE}Usage:${RESET} ./sandbox.sh [command]"
+        echo -e "${TRUNK}│${RESET}  ${WHITE}Usage:${RESET} ./scripts/sandbox.sh [command]"
         echo -e "${TRUNK}│${RESET}"
         echo -e "${TRUNK}│${RESET}  ${WHITE}Commands:${RESET}"
         echo -e "${TRUNK}│${RESET}    ${ORANGE}start${RESET}   - Build/verify the sandbox docker image"
@@ -127,7 +129,7 @@ case "$ACTION" in
         ;;
     *)
         log_error "unknown command: '$ACTION'"
-        echo -e "${TRUNK}│${RESET}  Run ${WHITE}./sandbox.sh help${RESET} for available commands"
+        echo -e "${TRUNK}│${RESET}  Run ${WHITE}./scripts/sandbox.sh help${RESET} for available commands"
         exit 1
         ;;
 esac
