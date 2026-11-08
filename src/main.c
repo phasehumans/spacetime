@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 
     int opt;
     int opt_idx = 0;
-    while ((opt = getopt_long(argc, argv, "+a:i:t:h", long_options, &opt_idx)) != -1) {
+    while ((opt = getopt_long(argc, argv, "a:i:t:h", long_options, &opt_idx)) != -1) {
         switch (opt) {
             case 'a':
                 strncpy(agent_name, optarg, sizeof(agent_name) - 1);
@@ -164,6 +164,10 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        if (docker_ensure_image(image, force_rebuild) != 0) {
+            return 1;
+        }
+
         TaskResult res;
         eval_run_task(&task, &agent, image, timeout_override, false, &res);
         int exit_code = res.passed ? 0 : 1;
@@ -182,6 +186,10 @@ int main(int argc, char **argv) {
 
         if (docker_check_daemon() != 0) {
             fprintf(stderr, "\033[31mError: Cannot connect to Docker daemon at %s. Is Docker running?\033[0m\n", DOCKER_SOCK_PATH);
+            return 1;
+        }
+
+        if (docker_ensure_image(image, force_rebuild) != 0) {
             return 1;
         }
 
