@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - trim-down
   pull_request:
     branches:
       - main
@@ -12,39 +13,18 @@ permissions:
   contents: read
 
 jobs:
-  lint-and-format:
-    name: Lint & Format
+  build-and-test:
+    name: Build & Test (C11)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+      - name: Compile C binary
+        run: make
 
-      - name: Check code formatting
-        run: cargo fmt --check
-
-      - name: Run clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-  test:
-    name: Test & Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cargo check
-        run: cargo check
-
-      - name: Run test suite
-        run: cargo test --all-targets
+      - name: Run C unit tests
+        run: make test
 
   sandbox-docker:
     name: Verify Sandbox Dockerfile

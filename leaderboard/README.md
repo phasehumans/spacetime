@@ -38,14 +38,14 @@ and open a pull request.
 Run the same checks locally:
 
 ```bash
-npm --prefix website run validate
+node scripts/validate-leaderboard.mjs
 ```
 
 ## Tiers
 
-- `community` — submitted by the runner, not reproduced by a maintainer. Rendered
+- `community`: submitted by the runner, not reproduced by a maintainer. Rendered
   with a badge.
-- `verified` — a maintainer or CI re-ran the suite on a pinned commit and container
+- `verified`: a maintainer or CI re-ran the suite on a pinned commit and container
   image. The badge is the only thing that distinguishes it from a self-reported run.
 
 Changing a task's `prompt.txt`, `setup.sh`, `test.sh` or `meta.sh` changes the taskset

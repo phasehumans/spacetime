@@ -6,7 +6,7 @@
 
 Spacetime evaluates AI agents inside isolated Docker containers on real terminal challenges like fixing broken Nginx servers, resolving Git conflicts, parsing logs, and repairing port clashes. Solutions are tested against strict test assertions to verify what actually works.
 
-It runs agents through 50 embedded Linux environments covering sysadmin, networking, debugging, and data pipelines. Beyond basic pass/fail checks, Spacetime captures deep telemetry across the execution lifecycle—tracking pass rates, latency, turn efficiency, error recovery, token economics & cost, and self-verification behavior.
+It runs agents through 50 embedded Linux environments covering sysadmin, networking, debugging, and data pipelines. Beyond basic pass/fail checks, Spacetime captures deep telemetry across the execution lifecycle: tracking pass rates, latency, turn efficiency, error recovery, token economics & cost, and self-verification behavior.
 
 ```bash
 curl -fsSL https://spacetime.trydecember.com | bash
@@ -60,7 +60,7 @@ sequenceDiagram
 ### Leaderboard
 
 Results are ranked publicly at [spacetime.trydecember.com/leaderboard](https://spacetime.trydecember.com/leaderboard).
-A row is only comparable to rows produced against the same taskset — the digest
+A row is only comparable to rows produced against the same taskset: the digest
 of every task's prompt, setup, assertions and limits. Changing one `test.sh`
 retires the old numbers to a historical group instead of letting them compete
 with new ones.
@@ -79,10 +79,12 @@ maintainer re-run marks a row `verified`. Both badges travel with the number.
 Ranking order is pass rate, then cost per resolved task, then average task time.
 See [`leaderboard/README.md`](leaderboard/README.md) for the full validation rules.
 
-The site is a static Astro build in [`website/`](website/):
+### Building from Source
 
 ```bash
-npm --prefix website run dev
+make
+make test
+sudo make install
 ```
 
 To contribute or add tasks, open a PR. For help, reach out at team@trydecember.com.
