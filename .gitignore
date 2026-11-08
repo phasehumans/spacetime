@@ -3,6 +3,11 @@
 .env.*
 !*.example
 /results/
+/logs/
+*.o
+/spacetime
+/test/test_taskset
+/test/test_docker
 node_modules/
 website/dist/
 website/.astro/
