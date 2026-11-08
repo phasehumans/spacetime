@@ -8,11 +8,6 @@ Spacetime evaluates AI agents inside isolated Docker containers on real terminal
 
 It runs agents through 50 embedded Linux environments covering sysadmin, networking, debugging, and data pipelines. Beyond basic pass/fail checks, Spacetime captures deep telemetry across the execution lifecycle: tracking pass rates, latency, turn efficiency, error recovery, token economics & cost, and self-verification behavior.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/phasehumans/spacetime/main/scripts/install.sh | bash
-```
-
-
 ### How It Works
 
 - Starts a fresh, isolated Docker container
@@ -60,6 +55,8 @@ sequenceDiagram
 ### Quickstart
 
 ```bash
+git clone https://github.com/phasehumans/spacetime.git
+cd spacetime
 make
 ./spacetime list
 ./spacetime run 001-nginx-config --agent claude
@@ -70,5 +67,11 @@ Run unit tests:
 
 ```bash
 make test
+```
+
+Install system-wide (optional):
+
+```bash
+sudo make install
 ```
 
