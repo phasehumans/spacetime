@@ -10,14 +10,15 @@ permissions:
 
 jobs:
   build-release:
-    name: Build Native C Binary
+    name: Build Native C++ Binary
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Build release binary
-        run: make
+        # Link libstdc++ statically so the binary runs on older distros too.
+        run: make CMAKE_ARGS="-DSPACETIME_STATIC_RUNTIME=ON -DSPACETIME_BUILD_TESTS=OFF"
 
       - name: Package Release Archive
         run: |

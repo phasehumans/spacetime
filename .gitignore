@@ -5,5 +5,5 @@
 /logs/
 *.o
 /spacetime
-/test/test_taskset
-/test/test_docker
+/build/
+TODO.md

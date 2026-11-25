@@ -1,43 +1,43 @@
-CC ?= gcc
-CFLAGS ?= -std=c11 -Wall -Wextra -pedantic -Iinclude -Ivendor -O2
-LDFLAGS ?= -lm
+# Thin wrapper around the CMake build (see CMakeLists.txt).
 
-SRCS = src/main.c \
-       src/agent.c \
-       src/docker.c \
-       src/eval.c \
-       src/report.c \
-       src/sha256.c \
-       src/task.c \
-       src/taskset.c \
-       src/tui.c \
-       vendor/yyjson/yyjson.c
+CMAKE      ?= cmake
+BUILD_DIR  ?= build
+BUILD_TYPE ?= Release
+PREFIX     ?= /usr/local
+CMAKE_ARGS ?=
 
-OBJS = $(SRCS:.c=.o)
 TARGET = spacetime
 
-.PHONY: all clean test debug install
+# Keep the nested CMake-driven make quiet.
+MAKEFLAGS += --no-print-directory
 
-all: $(TARGET)
+.PHONY: all configure debug test test-docker clean install
 
-$(TARGET): $(OBJS)
-	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
+all: configure
+	$(CMAKE) --build $(BUILD_DIR) --target $(TARGET) --parallel
+	@cp $(BUILD_DIR)/$(TARGET) $(TARGET)
 	@echo "Built $(TARGET) successfully!"
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+configure:
+	@command -v $(CMAKE) >/dev/null 2>&1 || { \
+		echo "error: cmake not found. Install it first (e.g. 'sudo apt install cmake' or 'brew install cmake')." >&2; \
+		exit 1; }
+	$(CMAKE) -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) $(CMAKE_ARGS)
 
-debug: CFLAGS = -std=c11 -Wall -Wextra -pedantic -Iinclude -Ivendor -g -DDEBUG -O0
-debug: clean $(TARGET)
+debug: BUILD_TYPE = Debug
+debug: all
 
 test: all
-	$(CC) $(CFLAGS) test/test_taskset.c src/task.c src/taskset.c src/sha256.c -o test/test_taskset $(LDFLAGS)
-	./test/test_taskset
+	$(CMAKE) --build $(BUILD_DIR) --target spacetime_tests --parallel
+	$(BUILD_DIR)/spacetime_tests
 	@echo "All unit tests passed!"
 
-clean:
-	rm -f $(OBJS) $(TARGET) test/test_taskset test/test_docker
+# Integration test against a live Docker daemon (needs the ubuntu:24.04 image).
+test-docker: test
+	$(BUILD_DIR)/spacetime_tests "[docker]"
 
-install: $(TARGET)
-	install -d $(DESTDIR)/usr/local/bin
-	install -m 755 $(TARGET) $(DESTDIR)/usr/local/bin/$(TARGET)
+clean:
+	rm -rf $(BUILD_DIR) $(TARGET)
+
+install: all
+	$(CMAKE) --install $(BUILD_DIR) --prefix $(PREFIX)

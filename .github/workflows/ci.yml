@@ -14,16 +14,16 @@ permissions:
 
 jobs:
   build-and-test:
-    name: Build & Test (C11)
+    name: Build & Test (C++20)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Compile C binary
+      - name: Compile C++ binary
         run: make
 
-      - name: Run C unit tests
+      - name: Run unit tests
         run: make test
 
   sandbox-docker:

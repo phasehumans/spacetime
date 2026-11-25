@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="spacetime" height="30" />
+  <img src="src/assets/logo.svg" alt="spacetime" height="30" />
 </p>
 
-<h4 align="center">a benchmark for evaluating coding agents on interactive terminal tasks</h4>
+<h4 align="center">evals, benchmarks and rl environments for coding agents</h4>
 
 Spacetime evaluates AI agents inside isolated Docker containers on real terminal challenges like fixing broken Nginx servers, resolving Git conflicts, parsing logs, and repairing port clashes. Solutions are tested against strict test assertions to verify what actually works.
 
@@ -51,27 +51,3 @@ sequenceDiagram
     CLI->>Telemetry: Compute resolution rate, latency & intelligence metrics
     Telemetry-->>CLI: Render scorecard & save JSON report
 ```
-
-### Quickstart
-
-```bash
-git clone https://github.com/phasehumans/spacetime.git
-cd spacetime
-make
-./spacetime list
-./spacetime run 001-nginx-config --agent claude
-./spacetime eval-all --agent claude
-```
-
-Run unit tests:
-
-```bash
-make test
-```
-
-Install system-wide (optional):
-
-```bash
-sudo make install
-```
-
